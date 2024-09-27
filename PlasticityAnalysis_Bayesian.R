@@ -128,6 +128,12 @@ ind_data <- ind_data %>% filter(Temperature < 37)
 
 mean_data <- mean_data %>% filter(Temperature < 37)
 
+# add a variable that is centered temperature
+
+ind_data <- ind_data %>% mutate(TempCenter = Temperature-mean(unique(Temperature)))
+
+mean_data <- mean_data %>% ungroup() %>% mutate(TempCenter = Temperature-mean(unique(Temperature)))
+
 ################################################################################
 ### Fitting Bayesian "Random Regression Models"
 ################################################################################
@@ -136,10 +142,10 @@ mean_data <- mean_data %>% filter(Temperature < 37)
 
 ### first just visualize the relationship with temperature
 
-ggplot(data = ind_data, aes(x = Temperature, y = mean_major, color = Genotype)) + 
+ggplot(data = ind_data, aes(x = TempCenter, y = mean_major, color = Genotype)) + 
   geom_point() + geom_smooth(method = 'gam', formula = y ~ s(x, bs = 'tp', k  = 6), se = FALSE)
 
-ggplot(data = mean_data, aes(x = Temperature, y = mean_major, color = Genotype)) + geom_point() + 
+ggplot(data = mean_data, aes(x = TempCenter, y = mean_major, color = Genotype)) + geom_point() + 
   geom_smooth()
 
 
@@ -154,64 +160,133 @@ ggplot(data = mean_data, aes(x = Temperature, y = mean_major, color = Genotype))
 
 # for now, we will just use default priors
 
-mod_1_mean_major <- brm(formula = mean_major ~ Temperature + (1|Genotype), data = ind_data)
+mod_1_mean_major <- brm(formula = mean_major ~ TempCenter + (1|Genotype), data = ind_data,
+                        backend = 'cmdstanr')
 
 summary(mod_1_mean_major)
 
 plot(mod_1_mean_major)
 
-# trace plot looks good 
-
 conditional_effects(mod_1_mean_major)
 
-ranef(mod_1_mean_major)
+mod_1_mean_major_waic <- waic(mod_1_mean_major)
 
 ### linear with random intercept and slope
 
-mod_2_mean_major <- brm(formula = mean_major ~ Temperature + (1 + Temperature|Genotype), data = ind_data)
+mod_2_mean_major <- brm(formula = mean_major ~ TempCenter + (1 + TempCenter|Genotype), data = ind_data,
+                        backend = 'cmdstanr')
 
 summary(mod_2_mean_major)
 
 plot(mod_2_mean_major)
 
+conditional_effects(mod_2_mean_major)
+
+mod_2_mean_major_waic <- waic(mod_2_mean_major)
+
 ### quadratic with random intercept
 
-mod_3_mean_major <- brm(formula = mean_major ~ poly(Temperature, 2, raw = TRUE) + (1|Genotype), data = ind_data)
+mod_3_mean_major <- brm(formula = mean_major ~ poly(TempCenter, 2, raw = TRUE) + (1|Genotype), data = ind_data,
+                        backend = 'cmdstanr')
 
-# there is a warning, but things look fine. Could run chains for longer and it will go away
-
-summary(mod_2_mean_major)
+summary(mod_3_mean_major)
 
 plot(mod_3_mean_major)
 
+conditional_effects(mod_3_mean_major, )
+
+mod_3_mean_major_waic <- waic(mod_3_mean_major)
+
 ### quadratic with random intercept and slope
 
-mod_4_mean_major <- brm(formula = mean_major ~ poly(Temperature, 2, raw = TRUE) + (1 + Temperature|Genotype), data = ind_data)
+mod_4_mean_major <- brm(formula = mean_major ~ poly(TempCenter, 2, raw = TRUE) + (1 + poly(TempCenter, 1, raw = TRUE)|Genotype), data = ind_data,
+                        backend = 'cmdstanr')
 
 summary(mod_4_mean_major)
 
 plot(mod_4_mean_major)
 
+conditional_effects(mod_4_mean_major)
+
+mod_4_mean_major_waic <- waic(mod_4_mean_major)
+
 ### quadratic with random intercept, slope, and quadratic term
 
-mod_5_mean_major <- brm(formula = mean_major ~ poly(Temperature, 2, raw = TRUE) + (1 + Temperature + I(Temperature^2)|Genotype), data = ind_data)
-
-### very slow ... but seems fine 
+mod_5_mean_major <- brm(formula = mean_major ~ poly(TempCenter, 2, raw = TRUE) + (1 + poly(TempCenter, 2, raw = TRUE)|Genotype), data = ind_data,
+                        backend = 'cmdstanr')
 
 summary(mod_5_mean_major)
 
 plot(mod_5_mean_major)
 
+conditional_effects(mod_5_mean_major)
+
+mod_5_mean_major_waic <- waic(mod_5_mean_major)
+
 ### cubic with random intercept
 
+mod_6_mean_major <- brm(formula = mean_major ~ poly(TempCenter, 3, raw = TRUE) + (1|Genotype), data = ind_data,
+                        backend = 'cmdstanr')
+
+summary(mod_6_mean_major)
+
+plot(mod_6_mean_major)
+
+conditional_effects(mod_6_mean_major)
+
+mod_6_mean_major_waic <- waic(mod_6_mean_major)
+
+### cubic with random intercept and slope
+
+mod_7_mean_major <- brm(formula = mean_major ~ poly(TempCenter, 3, raw = TRUE) + (1 + poly(TempCenter, 1, raw = TRUE)|Genotype), data = ind_data,
+                        backend = 'cmdstanr')
+
+summary(mod_7_mean_major)
+
+plot(mod_7_mean_major)
+
+conditional_effects(mod_7_mean_major)
+
+mod_7_mean_major_waic <- waic(mod_7_mean_major)
+
+### cubic with random intercept, slope, and quadratic
+
+mod_8_mean_major <- brm(formula = mean_major ~ poly(TempCenter, 3, raw = TRUE) + (1 + poly(TempCenter, 2, raw = TRUE)|Genotype), data = ind_data,
+                        backend = 'cmdstanr')
+
+summary(mod_8_mean_major)
+
+plot(mod_8_mean_major)
+
+conditional_effects(mod_8_mean_major)
+
+mod_8_mean_major_waic <- waic(mod_8_mean_major)
 
 
+### cubic with random intercept, slope, quadratic, and cubic
+
+mod_9_mean_major <- brm(formula = mean_major ~ poly(TempCenter, 3, raw = TRUE) + (1 + poly(TempCenter, 3, raw = TRUE)|Genotype), data = ind_data,
+                        backend = 'cmdstanr')
+
+summary(mod_9_mean_major)
+
+plot(mod_9_mean_major)
+
+conditional_effects(mod_9_mean_major)
+
+mod_9_mean_major_waic <- waic(mod_9_mean_major)
+
+### we can compare all of the models to ask which one is the best at predicting the data
+
+loo_compare(mod_1_mean_major_waic, mod_2_mean_major_waic, mod_3_mean_major_waic,
+            mod_4_mean_major_waic, mod_5_mean_major_waic, mod_6_mean_major_waic,
+            mod_7_mean_major_waic, mod_8_mean_major_waic, mod_9_mean_major_waic)
 
 
+### next we will want to think about the interpretation of this model and visualize
+### the predictions of the model
 
-
-
-
+### plot predictions of the most complicated model.
 
 
 
