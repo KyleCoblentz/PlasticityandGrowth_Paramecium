@@ -35,7 +35,7 @@ pca_mean_plot
 ggcorrplot(cor(mean_pca_data[,-1]))
 
 ################################################################################
-### plasticity in phenotypes
+### Reduce the number of phenotypes 
 ################################################################################
 
 ### as in our previous work we can probably safely ignore some variables from the beginning. 
@@ -84,6 +84,56 @@ ggplot(data = mean_pca_data, aes(x = mean_major, y = mean_minor)) + geom_point()
 ggplot(data = mean_pca_data, aes(x = mean_major, y = gross_speed)) + geom_point() + geom_smooth(method = 'lm')
 
 ggplot(data = mean_pca_data, aes(x = mean_turning, y = gross_speed)) + geom_point() + geom_smooth(method = 'lm')
+
+################################################################################
+### Plasticity in phenotypes
+################################################################################
+
+### for each of the phenotypes of interest, we can examine their relationships with 
+### temperature and ask about plasticity using "random regression models" which 
+### we can implement in a Bayesian framework to get uncertainty on measures of 
+### plasticity for each trait in response to temperature
+
+### modify the data 
+
+### first need to extract temperature and genotype data from the 
+### individual level data
+
+ind_data <- ind_data %>% mutate(Temperature = sapply(strsplit(ind_data$file, "_"), function(x) x[3] ),
+                                Genotype = sapply(strsplit(ind_data$file, "_"), function(x) x[4]))
+
+### can then get mean data
+
+mean_data <- ind_data %>% group_by(file, Temperature, Genotype) %>% select(-id) %>% summarise_all(.funs = median)
+
+# make temperature numeric
+
+ind_data$Temperature <- as.numeric(ind_data$Temperature)
+
+mean_data$Temperature <- as.numeric(mean_data$Temperature)
+
+# make genotype a factor
+
+ind_data$Genotype <- as.factor(ind_data$Genotype)
+
+mean_data$Genotype <- as.factor(mean_data$Genotype)
+
+# drop 37 since we only have measurements for 2 genotypes
+
+ind_data <- ind_data %>% filter(Temperature < 37)
+
+mean_data <- mean_data %>% filter(Temperature < 37)
+
+
+
+
+
+
+
+
+
+
+
 
 
 
