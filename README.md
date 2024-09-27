@@ -9,4 +9,4 @@ StartPop_TPC.csv -- This csv file contains growth rate data for the same 20 outc
 
 PlasticityAnalysis.R -- This R file is a work in progress. The goal of the analyses in this file is to characterize the plasticity of paramecium phenotypes in response to temperature across the 20 lines.
 
-
+PlasticityAnalysis_Bayesian.R -- This R file is a work in progress. The goal is to implement a Bayesian "Random Regression Model" approach to esitmating plasticity and GxE in phenotypes across the 20 lines.
