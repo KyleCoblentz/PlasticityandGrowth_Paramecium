@@ -4,7 +4,11 @@
 
 ### load libraries
 
-library(ggplot2); library(dplyr); library(cowplot); library(ggcorrplot); library(ggbiplot); library(brms); library(cmdstanr)
+library(ggplot2); library(dplyr); library(cowplot); library(ggcorrplot); library(ggbiplot); library(brms); library(cmdstanr); library(loo)
+
+### allow loo to use all cores
+
+options(mc.cores = 4)
 
 ### ### load data
 
@@ -124,21 +128,81 @@ ind_data <- ind_data %>% filter(Temperature < 37)
 
 mean_data <- mean_data %>% filter(Temperature < 37)
 
+################################################################################
+### Fitting Bayesian "Random Regression Models"
+################################################################################
+
+### start with mean_major (paramecium length)
+
+### first just visualize the relationship with temperature
+
+ggplot(data = ind_data, aes(x = Temperature, y = mean_major, color = Genotype)) + 
+  geom_point() + geom_smooth(method = 'gam', formula = y ~ s(x, bs = 'tp', k  = 6), se = FALSE)
+
+ggplot(data = mean_data, aes(x = Temperature, y = mean_major, color = Genotype)) + geom_point() + 
+  geom_smooth()
 
 
+### will plan to fit a series of models of increasing complexity.
+### for fixed effects we will fit models from linear to cubic
+### for random effects will do the intercept and then 
+### higher order terms 
 
+### we will then use waic to ask about model support
 
+### simplest model -- linear with random intercept
 
+# for now, we will just use default priors
 
+mod_1_mean_major <- brm(formula = mean_major ~ Temperature + (1|Genotype), data = ind_data)
 
+summary(mod_1_mean_major)
 
+plot(mod_1_mean_major)
 
+# trace plot looks good 
 
+conditional_effects(mod_1_mean_major)
 
+ranef(mod_1_mean_major)
 
+### linear with random intercept and slope
 
+mod_2_mean_major <- brm(formula = mean_major ~ Temperature + (1 + Temperature|Genotype), data = ind_data)
 
+summary(mod_2_mean_major)
 
+plot(mod_2_mean_major)
+
+### quadratic with random intercept
+
+mod_3_mean_major <- brm(formula = mean_major ~ poly(Temperature, 2, raw = TRUE) + (1|Genotype), data = ind_data)
+
+# there is a warning, but things look fine. Could run chains for longer and it will go away
+
+summary(mod_2_mean_major)
+
+plot(mod_3_mean_major)
+
+### quadratic with random intercept and slope
+
+mod_4_mean_major <- brm(formula = mean_major ~ poly(Temperature, 2, raw = TRUE) + (1 + Temperature|Genotype), data = ind_data)
+
+summary(mod_4_mean_major)
+
+plot(mod_4_mean_major)
+
+### quadratic with random intercept, slope, and quadratic term
+
+mod_5_mean_major <- brm(formula = mean_major ~ poly(Temperature, 2, raw = TRUE) + (1 + Temperature + I(Temperature^2)|Genotype), data = ind_data)
+
+### very slow ... but seems fine 
+
+summary(mod_5_mean_major)
+
+plot(mod_5_mean_major)
+
+### cubic with random intercept
 
 
 
