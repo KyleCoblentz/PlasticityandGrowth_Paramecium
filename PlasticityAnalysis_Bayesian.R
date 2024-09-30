@@ -130,9 +130,9 @@ mean_data <- mean_data %>% filter(Temperature < 37)
 
 # add a variable that is centered temperature
 
-ind_data <- ind_data %>% mutate(TempCenter = Temperature-mean(unique(Temperature)))
+# ind_data <- ind_data %>% mutate(TempCenter = Temperature-mean(unique(Temperature)))
 
-mean_data <- mean_data %>% ungroup() %>% mutate(TempCenter = Temperature-mean(unique(Temperature)))
+# mean_data <- mean_data %>% ungroup() %>% mutate(TempCenter = Temperature-mean(unique(Temperature)))
 
 ################################################################################
 ### Fitting Bayesian "Random Regression Models"
@@ -142,10 +142,10 @@ mean_data <- mean_data %>% ungroup() %>% mutate(TempCenter = Temperature-mean(un
 
 ### first just visualize the relationship with temperature
 
-ggplot(data = ind_data, aes(x = TempCenter, y = mean_major, color = Genotype)) + 
+ggplot(data = ind_data, aes(x = Temperature, y = mean_major, color = Genotype)) + 
   geom_point() + geom_smooth(method = 'gam', formula = y ~ s(x, bs = 'tp', k  = 6), se = FALSE)
 
-ggplot(data = mean_data, aes(x = TempCenter, y = mean_major, color = Genotype)) + geom_point() + 
+ggplot(data = mean_data, aes(x = Temperature, y = mean_major, color = Genotype)) + geom_point() + 
   geom_smooth()
 
 
@@ -160,7 +160,7 @@ ggplot(data = mean_data, aes(x = TempCenter, y = mean_major, color = Genotype)) 
 
 # for now, we will just use default priors
 
-mod_1_mean_major <- brm(formula = mean_major ~ TempCenter + (1|Genotype), data = ind_data,
+mod_1_mean_major <- brm(formula = mean_major ~ Temperature + (1|Genotype), data = ind_data,
                         backend = 'cmdstanr')
 
 summary(mod_1_mean_major)
@@ -173,7 +173,7 @@ mod_1_mean_major_waic <- waic(mod_1_mean_major)
 
 ### linear with random intercept and slope
 
-mod_2_mean_major <- brm(formula = mean_major ~ TempCenter + (1 + TempCenter|Genotype), data = ind_data,
+mod_2_mean_major <- brm(formula = mean_major ~ Temperature + (1 + Temperature|Genotype), data = ind_data,
                         backend = 'cmdstanr')
 
 summary(mod_2_mean_major)
@@ -186,20 +186,20 @@ mod_2_mean_major_waic <- waic(mod_2_mean_major)
 
 ### quadratic with random intercept
 
-mod_3_mean_major <- brm(formula = mean_major ~ poly(TempCenter, 2, raw = TRUE) + (1|Genotype), data = ind_data,
+mod_3_mean_major <- brm(formula = mean_major ~ poly(Temperature, 2, raw = TRUE) + (1|Genotype), data = ind_data,
                         backend = 'cmdstanr')
 
 summary(mod_3_mean_major)
 
 plot(mod_3_mean_major)
 
-conditional_effects(mod_3_mean_major, )
+conditional_effects(mod_3_mean_major)
 
 mod_3_mean_major_waic <- waic(mod_3_mean_major)
 
 ### quadratic with random intercept and slope
 
-mod_4_mean_major <- brm(formula = mean_major ~ poly(TempCenter, 2, raw = TRUE) + (1 + poly(TempCenter, 1, raw = TRUE)|Genotype), data = ind_data,
+mod_4_mean_major <- brm(formula = mean_major ~ poly(Temperature, 2, raw = TRUE) + (1 + poly(Temperature, 1, raw = TRUE)|Genotype), data = ind_data,
                         backend = 'cmdstanr')
 
 summary(mod_4_mean_major)
@@ -212,7 +212,7 @@ mod_4_mean_major_waic <- waic(mod_4_mean_major)
 
 ### quadratic with random intercept, slope, and quadratic term
 
-mod_5_mean_major <- brm(formula = mean_major ~ poly(TempCenter, 2, raw = TRUE) + (1 + poly(TempCenter, 2, raw = TRUE)|Genotype), data = ind_data,
+mod_5_mean_major <- brm(formula = mean_major ~ poly(Temperature, 2, raw = TRUE) + (1 + poly(Temperature, 2, raw = TRUE)|Genotype), data = ind_data,
                         backend = 'cmdstanr')
 
 summary(mod_5_mean_major)
@@ -225,7 +225,7 @@ mod_5_mean_major_waic <- waic(mod_5_mean_major)
 
 ### cubic with random intercept
 
-mod_6_mean_major <- brm(formula = mean_major ~ poly(TempCenter, 3, raw = TRUE) + (1|Genotype), data = ind_data,
+mod_6_mean_major <- brm(formula = mean_major ~ poly(Temperature, 3, raw = TRUE) + (1|Genotype), data = ind_data,
                         backend = 'cmdstanr')
 
 summary(mod_6_mean_major)
@@ -238,7 +238,7 @@ mod_6_mean_major_waic <- waic(mod_6_mean_major)
 
 ### cubic with random intercept and slope
 
-mod_7_mean_major <- brm(formula = mean_major ~ poly(TempCenter, 3, raw = TRUE) + (1 + poly(TempCenter, 1, raw = TRUE)|Genotype), data = ind_data,
+mod_7_mean_major <- brm(formula = mean_major ~ poly(Temperature, 3, raw = TRUE) + (1 + poly(Temperature, 1, raw = TRUE)|Genotype), data = ind_data,
                         backend = 'cmdstanr')
 
 summary(mod_7_mean_major)
@@ -251,7 +251,7 @@ mod_7_mean_major_waic <- waic(mod_7_mean_major)
 
 ### cubic with random intercept, slope, and quadratic
 
-mod_8_mean_major <- brm(formula = mean_major ~ poly(TempCenter, 3, raw = TRUE) + (1 + poly(TempCenter, 2, raw = TRUE)|Genotype), data = ind_data,
+mod_8_mean_major <- brm(formula = mean_major ~ poly(Temperature, 3, raw = TRUE) + (1 + poly(Temperature, 2, raw = TRUE)|Genotype), data = ind_data,
                         backend = 'cmdstanr')
 
 summary(mod_8_mean_major)
@@ -265,7 +265,7 @@ mod_8_mean_major_waic <- waic(mod_8_mean_major)
 
 ### cubic with random intercept, slope, quadratic, and cubic
 
-mod_9_mean_major <- brm(formula = mean_major ~ poly(TempCenter, 3, raw = TRUE) + (1 + poly(TempCenter, 3, raw = TRUE)|Genotype), data = ind_data,
+mod_9_mean_major <- brm(formula = mean_major ~ poly(Temperature, 3, raw = TRUE) + (1 + poly(Temperature, 3, raw = TRUE)|Genotype), data = ind_data,
                         backend = 'cmdstanr')
 
 summary(mod_9_mean_major)
@@ -288,20 +288,49 @@ loo_compare(mod_1_mean_major_waic, mod_2_mean_major_waic, mod_3_mean_major_waic,
 
 ### plot predictions of the most complicated model.
 
+### will need "newdata" data frame with TempCenter and Genotypes
+
+range(ind_data$Temperature)
+
+### TempCenter ranges from -15.16 to 8.84
+
+### for predictions we can go by 0.2
+
+seq(10, 34, by = 0.2)
+
+# 121 rows for each genotype
+
+Genotype <- rep(unique(ind_data$Genotype), each = 121)
+
+# vectors for temperatures
+
+Temperature <- rep(seq(10, 34, by = 0.2), times = 20)
+
+# put together into a new data frame
+
+new_data <- data.frame(Genotype, Temperature)
+
+predict_mean_major <- posterior_epred(mod_5_mean_major,
+                                      newdata = new_data)
+
+# get means for each of the predictions
+
+predict_mean_major <- apply(predict_mean_major, 2, median)
+
+predict_mean_major <- data.frame(Genotype, Temperature, Prediction = predict_mean_major)
+
+# now make the plot
+
+ggplot(data = mean_data, aes(x = Temperature, y = mean_major, color = Genotype)) + 
+  geom_point() + geom_line(data = predict_mean_major, aes(x = Temperature, y = Prediction, color = Genotype))
+
+# plot for a single genotype
+
+ggplot(data = filter(ind_data, Genotype == "G89"), aes(x = Temperature, y = mean_major)) + 
+  geom_point() + geom_line(data = filter(predict_mean_major, Genotype == "G89"), aes(x = Temperature, y = Prediction))
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+ranef(mod_8_mean_major)
 
 
 
