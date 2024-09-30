@@ -169,7 +169,7 @@ plot(mod_1_mean_major)
 
 conditional_effects(mod_1_mean_major)
 
-mod_1_mean_major_waic <- waic(mod_1_mean_major)
+mod_1_mean_major_loo <- loo(mod_1_mean_major)
 
 ### linear with random intercept and slope
 
@@ -182,7 +182,7 @@ plot(mod_2_mean_major)
 
 conditional_effects(mod_2_mean_major)
 
-mod_2_mean_major_waic <- waic(mod_2_mean_major)
+mod_2_mean_major_loo <- loo(mod_2_mean_major)
 
 ### quadratic with random intercept
 
@@ -195,7 +195,7 @@ plot(mod_3_mean_major)
 
 conditional_effects(mod_3_mean_major)
 
-mod_3_mean_major_waic <- waic(mod_3_mean_major)
+mod_3_mean_major_loo <- loo(mod_3_mean_major)
 
 ### quadratic with random intercept and slope
 
@@ -208,7 +208,7 @@ plot(mod_4_mean_major)
 
 conditional_effects(mod_4_mean_major)
 
-mod_4_mean_major_waic <- waic(mod_4_mean_major)
+mod_4_mean_major_loo <- loo(mod_4_mean_major)
 
 ### quadratic with random intercept, slope, and quadratic term
 
@@ -221,7 +221,7 @@ plot(mod_5_mean_major)
 
 conditional_effects(mod_5_mean_major)
 
-mod_5_mean_major_waic <- waic(mod_5_mean_major)
+mod_5_mean_major_loo <- loo(mod_5_mean_major)
 
 ### cubic with random intercept
 
@@ -234,7 +234,7 @@ plot(mod_6_mean_major)
 
 conditional_effects(mod_6_mean_major)
 
-mod_6_mean_major_waic <- waic(mod_6_mean_major)
+mod_6_mean_major_loo <- loo(mod_6_mean_major)
 
 ### cubic with random intercept and slope
 
@@ -247,7 +247,7 @@ plot(mod_7_mean_major)
 
 conditional_effects(mod_7_mean_major)
 
-mod_7_mean_major_waic <- waic(mod_7_mean_major)
+mod_7_mean_major_loo <- loo(mod_7_mean_major)
 
 ### cubic with random intercept, slope, and quadratic
 
@@ -260,7 +260,7 @@ plot(mod_8_mean_major)
 
 conditional_effects(mod_8_mean_major)
 
-mod_8_mean_major_waic <- waic(mod_8_mean_major)
+mod_8_mean_major_loo <- loo(mod_8_mean_major)
 
 
 ### cubic with random intercept, slope, quadratic, and cubic
@@ -276,11 +276,13 @@ conditional_effects(mod_9_mean_major)
 
 mod_9_mean_major_waic <- waic(mod_9_mean_major)
 
+### this model doesn't fit well ... 
+
 ### we can compare all of the models to ask which one is the best at predicting the data
 
-loo_compare(mod_1_mean_major_waic, mod_2_mean_major_waic, mod_3_mean_major_waic,
-            mod_4_mean_major_waic, mod_5_mean_major_waic, mod_6_mean_major_waic,
-            mod_7_mean_major_waic, mod_8_mean_major_waic, mod_9_mean_major_waic)
+loo_compare(mod_1_mean_major_loo, mod_2_mean_major_loo, mod_3_mean_major_loo,
+            mod_4_mean_major_loo, mod_5_mean_major_loo, mod_6_mean_major_loo,
+            mod_7_mean_major_loo, mod_8_mean_major_loo)
 
 
 ### next we will want to think about the interpretation of this model and visualize
@@ -310,7 +312,7 @@ Temperature <- rep(seq(10, 34, by = 0.2), times = 20)
 
 new_data <- data.frame(Genotype, Temperature)
 
-predict_mean_major <- posterior_epred(mod_5_mean_major,
+predict_mean_major <- posterior_epred(mod_4_mean_major,
                                       newdata = new_data)
 
 # get means for each of the predictions
@@ -326,11 +328,23 @@ ggplot(data = mean_data, aes(x = Temperature, y = mean_major, color = Genotype))
 
 # plot for a single genotype
 
-ggplot(data = filter(ind_data, Genotype == "G89"), aes(x = Temperature, y = mean_major)) + 
-  geom_point() + geom_line(data = filter(predict_mean_major, Genotype == "G89"), aes(x = Temperature, y = Prediction))
+ggplot(data = filter(ind_data, Genotype == "G77"), aes(x = Temperature, y = mean_major)) + 
+  geom_point() + geom_line(data = filter(predict_mean_major, Genotype == "G77"), aes(x = Temperature, y = Prediction))
 
 
-ranef(mod_8_mean_major)
+plot(x = ranef(mod_4_mean_major)$Genotype[,1,2], y = ranef(mod_7_mean_major)$Genotype[,1,2])
+
+### I think maybe fixing it quadratic is fine ... super correlated random effects between 
+### 
+
+### now we can move through each of the different phenotypes. Or maybe just focus on size and movement
+
+################################################################################
+### Minor axis -- width
+################################################################################
+
+
+
 
 
 
