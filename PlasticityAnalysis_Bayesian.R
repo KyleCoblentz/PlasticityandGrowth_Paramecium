@@ -15,7 +15,7 @@ options(mc.cores = 4)
 ind_data <- read.csv('Plast_StartPop_Data.csv')
 
 pca_data <- ind_data %>% select(-c(X, mean_grey, sd_grey, sd_area,
-                                   sd_perimeter, sd_major, sd_minor,
+                                   sd_perimeter, sd_major, sd_ar,
                                    sd_ar, duration, N_frames, id))
 
 pca_mvt <- prcomp(pca_data[,-1], center = TRUE, scale = TRUE)
@@ -49,7 +49,7 @@ ggcorrplot(cor(mean_pca_data[,-1]))
 ### we can start by looking at PCA's and correlations when we limit our data to just 
 ### these variables
 
-pca_data <- ind_data %>% select(c(file, mean_major, mean_minor, mean_ar, mean_turning, gross_speed,
+pca_data <- ind_data %>% select(c(file, mean_major, mean_ar, mean_ar, mean_turning, gross_speed,
                                   net_disp, sd_gross_speed))
 
 pca_mvt <- prcomp(pca_data[,-1], center = TRUE, scale = TRUE)
@@ -83,7 +83,7 @@ ggplot(data = mean_pca_data, aes(x = mean_ar, y = gross_speed)) + geom_point() +
 ### can look at some of the others just to visualize the strengths of the correlations
 ### for the correlation matrix
 
-ggplot(data = mean_pca_data, aes(x = mean_major, y = mean_minor)) + geom_point() + geom_smooth(method = 'lm')
+ggplot(data = mean_pca_data, aes(x = mean_major, y = mean_ar)) + geom_point() + geom_smooth(method = 'lm')
 
 ggplot(data = mean_pca_data, aes(x = mean_major, y = gross_speed)) + geom_point() + geom_smooth(method = 'lm')
 
@@ -328,8 +328,8 @@ ggplot(data = mean_data, aes(x = Temperature, y = mean_major, color = Genotype))
 
 # plot for a single genotype
 
-ggplot(data = filter(ind_data, Genotype == "G33"), aes(x = Temperature, y = mean_major)) + 
-  geom_point() + geom_line(data = filter(predict_mean_major, Genotype == "G33"), aes(x = Temperature, y = Prediction))
+ggplot(data = filter(ind_data, Genotype == "G34"), aes(x = Temperature, y = mean_major)) + 
+  geom_point() + geom_line(data = filter(predict_mean_major, Genotype == "G34"), aes(x = Temperature, y = Prediction))
 
 
 plot(x = ranef(mod_4_mean_major)$Genotype[,1,2], y = ranef(mod_8_mean_major)$Genotype[,1,2])
@@ -340,7 +340,7 @@ plot(x = ranef(mod_4_mean_major)$Genotype[,1,2], y = ranef(mod_8_mean_major)$Gen
 ### now we can move through each of the different phenotypes. Or maybe just focus on size and movement
 
 ################################################################################
-### Minor axis -- width
+### ar axis -- width
 ################################################################################
 
 ### visualize relationship with temperature
@@ -351,14 +351,14 @@ ggplot(data = ind_data, aes(x = Temperature, y = mean_minor, color = Genotype)) 
 ggplot(data = mean_data, aes(x = Temperature, y = mean_minor, color = Genotype)) + geom_point() + 
   geom_smooth()
 
-### simplest model -- linear with random intercept
+### simplest model -- lineminor with random intercept
 
 # for now, we will just use default priors
 
 mod_1_mean_minor <- brm(formula = mean_minor ~ Temperature + (1|Genotype), data = ind_data,
                         backend = 'cmdstanr')
 
-summary(mod_1_mean_minor)
+summminory(mod_1_mean_minor)
 
 plot(mod_1_mean_minor)
 
@@ -366,12 +366,12 @@ conditional_effects(mod_1_mean_minor)
 
 mod_1_mean_minor_loo <- loo(mod_1_mean_minor)
 
-### linear with random intercept and slope
+### lineminor with random intercept and slope
 
 mod_2_mean_minor <- brm(formula = mean_minor ~ Temperature + (1 + Temperature|Genotype), data = ind_data,
                         backend = 'cmdstanr', cores = getOption("mc.cores", 1))
 
-summary(mod_2_mean_minor)
+summminory(mod_2_mean_minor)
 
 plot(mod_2_mean_minor)
 
@@ -385,7 +385,7 @@ mod_2_mean_minor_loo <- loo(mod_2_mean_minor)
 mod_3_mean_minor <- brm(formula = mean_minor ~ poly(Temperature, 2, raw = TRUE) + (1|Genotype), data = ind_data,
                         backend = 'cmdstanr', cores = getOption("mc.cores", 1))
 
-summary(mod_3_mean_minor)
+summminory(mod_3_mean_minor)
 
 plot(mod_3_mean_minor)
 
@@ -399,7 +399,7 @@ mod_3_mean_minor_loo <- loo(mod_3_mean_minor)
 mod_4_mean_minor <- brm(formula = mean_minor ~ poly(Temperature, 2, raw = TRUE) + (1 + poly(Temperature, 1, raw = TRUE)|Genotype), data = ind_data,
                         backend = 'cmdstanr', cores = getOption("mc.cores", 1))
 
-summary(mod_4_mean_minor)
+summminory(mod_4_mean_minor)
 
 plot(mod_4_mean_minor)
 
@@ -412,7 +412,7 @@ mod_4_mean_minor_loo <- loo(mod_4_mean_minor)
 mod_5_mean_minor <- brm(formula = mean_minor ~ poly(Temperature, 2, raw = TRUE) + (1 + poly(Temperature, 2, raw = TRUE)|Genotype), data = ind_data,
                         backend = 'cmdstanr', cores = getOption("mc.cores", 1))
 
-summary(mod_5_mean_minor)
+summminory(mod_5_mean_minor)
 
 plot(mod_5_mean_minor)
 
@@ -425,7 +425,7 @@ mod_5_mean_minor_loo <- loo(mod_5_mean_minor)
 mod_6_mean_minor <- brm(formula = mean_minor ~ poly(Temperature, 3, raw = TRUE) + (1|Genotype), data = ind_data,
                         backend = 'cmdstanr', cores = getOption("mc.cores", 1))
 
-summary(mod_6_mean_minor)
+summminory(mod_6_mean_minor)
 
 plot(mod_6_mean_minor)
 
@@ -438,7 +438,7 @@ mod_6_mean_minor_loo <- loo(mod_6_mean_minor)
 mod_7_mean_minor <- brm(formula = mean_minor ~ poly(Temperature, 3, raw = TRUE) + (1 + poly(Temperature, 1, raw = TRUE)|Genotype), data = ind_data,
                         backend = 'cmdstanr', cores = getOption("mc.cores", 1))
 
-summary(mod_7_mean_minor)
+summminory(mod_7_mean_minor)
 
 plot(mod_7_mean_minor)
 
@@ -451,7 +451,7 @@ mod_7_mean_minor_loo <- loo(mod_7_mean_minor)
 mod_8_mean_minor <- brm(formula = mean_minor ~ poly(Temperature, 3, raw = TRUE) + (1 + poly(Temperature, 2, raw = TRUE)|Genotype), data = ind_data,
                         backend = 'cmdstanr', cores = getOption("mc.cores", 1))
 
-summary(mod_8_mean_minor)
+summminory(mod_8_mean_minor)
 
 plot(mod_8_mean_minor)
 
@@ -464,7 +464,7 @@ mod_8_mean_minor_loo <- loo(mod_8_mean_minor)
 mod_9_mean_minor <- brm(formula = mean_minor ~ poly(Temperature, 3, raw = TRUE) + (1 + poly(Temperature, 3, raw = TRUE)|Genotype), data = ind_data,
                         backend = 'cmdstanr')
 
-summary(mod_9_mean_minor)
+summminory(mod_9_mean_minor)
 
 plot(mod_9_mean_minor)
 
@@ -472,9 +472,9 @@ conditional_effects(mod_9_mean_minor)
 
 mod_9_mean_minor_loo <- loo(mod_9_mean_minor)
 
-### compare models 
+### compminore models 
 
-loo_compare(mod_1_mean_minor_loo, mod_2_mean_minor_loo, mod_3_mean_minor_loo,
+loo_compminore(mod_1_mean_minor_loo, mod_2_mean_minor_loo, mod_3_mean_minor_loo,
             mod_4_mean_minor_loo, mod_5_mean_minor_loo, mod_6_mean_minor_loo,
             mod_7_mean_minor_loo, mod_8_mean_minor_loo)
 
@@ -498,13 +498,151 @@ ggplot(data = mean_data, aes(x = Temperature, y = mean_minor, color = Genotype))
 
 # plot for a single genotype
 
-ggplot(data = filter(ind_data, Genotype == "G44"), aes(x = Temperature, y = mean_minor)) + 
-  geom_point() + geom_line(data = filter(predict_mean_minor, Genotype == "G44"), aes(x = Temperature, y = Prediction))
+ggplot(data = filter(ind_data, Genotype == "G34"), aes(x = Temperature, y = mean_minor)) + 
+  geom_point() + geom_line(data = filter(predict_mean_minor, Genotype == "G34"), aes(x = Temperature, y = Prediction))
 
 
 plot(x = ranef(mod_7_mean_major)$Genotype[,1,2], y = ranef(mod_7_mean_minor)$Genotype[,1,2])
 
 summary(lm(ranef(mod_8_mean_minor)$Genotype[,1,2] ~ ranef(mod_8_mean_major)$Genotype[,1,2]))
+
+################################################################################
+### aspect ratio 
+################################################################################
+
+### visualize relationship with temperature
+
+ggplot(data = ind_data, aes(x = Temperature, y = mean_ar, color = Genotype)) + 
+  geom_point() + geom_smooth(method = 'gam', formula = y ~ s(x, bs = 'tp', k  = 6), se = FALSE)
+
+ggplot(data = mean_data, aes(x = Temperature, y = mean_ar, color = Genotype)) + geom_point() + 
+  geom_smooth()
+
+### doesn't look to as clean as the relationships between temperature and length and width
+### perhaps, on average, the paramecium are getting skinnier with higher temperatures
+
+### simplest model -- linear with random intercept
+
+# for now, we will just use default priors
+
+mod_1_mean_ar <- brm(formula = mean_ar ~ Temperature + (1|Genotype), data = ind_data,
+                        backend = 'cmdstanr')
+
+summary(mod_1_mean_ar)
+
+plot(mod_1_mean_ar)
+
+conditional_effects(mod_1_mean_ar)
+
+mod_1_mean_ar_loo <- loo(mod_1_mean_ar)
+
+### linear with random intercept and slope
+
+mod_2_mean_ar <- brm(formula = mean_ar ~ Temperature + (1 + Temperature|Genotype), data = ind_data,
+                        backend = 'cmdstanr', cores = getOption("mc.cores", 1))
+
+summary(mod_2_mean_ar)
+
+plot(mod_2_mean_ar)
+
+conditional_effects(mod_2_mean_ar)
+
+mod_2_mean_ar_loo <- loo(mod_2_mean_ar)
+
+### quadratic with random intercept
+
+mod_3_mean_ar <- brm(formula = mean_ar ~ poly(Temperature, 2, raw = TRUE) + (1|Genotype), data = ind_data,
+                        backend = 'cmdstanr', cores = getOption("mc.cores", 1))
+
+summary(mod_3_mean_ar)
+
+plot(mod_3_mean_ar)
+
+conditional_effects(mod_3_mean_ar)
+
+mod_3_mean_ar_loo <- loo(mod_3_mean_ar)
+
+### quadratic with random intercept and slope
+
+mod_4_mean_ar <- brm(formula = mean_ar ~ poly(Temperature, 2, raw = TRUE) + (1 + poly(Temperature, 1, raw = TRUE)|Genotype), data = ind_data,
+                        backend = 'cmdstanr', cores = getOption("mc.cores", 1))
+
+summary(mod_4_mean_ar)
+
+plot(mod_4_mean_ar)
+
+conditional_effects(mod_4_mean_ar)
+
+mod_4_mean_ar_loo <- loo(mod_4_mean_ar)
+
+### quadratic with random intercept, slope, and quadratic term
+
+mod_5_mean_ar <- brm(formula = mean_ar ~ poly(Temperature, 2, raw = TRUE) + (1 + poly(Temperature, 2, raw = TRUE)|Genotype), data = ind_data,
+                        backend = 'cmdstanr', cores = getOption("mc.cores", 1))
+
+summary(mod_5_mean_ar)
+
+plot(mod_5_mean_ar)
+
+conditional_effects(mod_5_mean_ar)
+
+mod_5_mean_ar_loo <- loo(mod_5_mean_ar)
+
+### cubic with random intercept
+
+# mod_6_mean_ar <- brm(formula = mean_ar ~ poly(Temperature, 3, raw = TRUE) + (1|Genotype), data = ind_data,
+#                         backend = 'cmdstanr', cores = getOption("mc.cores", 1))
+# 
+# summary(mod_6_mean_ar)
+# 
+# plot(mod_6_mean_ar)
+# 
+# conditional_effects(mod_6_mean_ar)
+# 
+# mod_6_mean_ar_loo <- loo(mod_6_mean_ar)
+
+### terrible fit. Maybe we skip the cubic for this one.
+
+### compare models 
+
+loo_compare(mod_1_mean_ar_loo, mod_2_mean_ar_loo, mod_3_mean_ar_loo,
+            mod_4_mean_ar_loo, mod_5_mean_ar_loo)
+
+# put together into a new data frame
+
+new_data <- data.frame(Genotype, Temperature)
+
+predict_mean_ar <- posterior_epred(mod_5_mean_ar,
+                                   newdata = new_data)
+
+# get means for each of the predictions
+
+predict_mean_ar <- apply(predict_mean_ar, 2, median)
+
+predict_mean_ar <- data.frame(Genotype, Temperature, Prediction = predict_mean_ar)
+
+# now make the plot
+
+ggplot(data = mean_data, aes(x = Temperature, y = mean_ar, color = Genotype)) + 
+  geom_point() + geom_line(data = predict_mean_ar, aes(x = Temperature, y = Prediction, color = Genotype))
+
+# plot for a single genotype
+
+ggplot(data = filter(ind_data, Genotype == "G34"), aes(x = Temperature, y = mean_ar)) + 
+  geom_point() + geom_line(data = filter(predict_mean_ar, Genotype == "G34"), aes(x = Temperature, y = Prediction))
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
