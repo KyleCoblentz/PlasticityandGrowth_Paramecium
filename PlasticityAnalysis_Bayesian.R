@@ -328,8 +328,8 @@ ggplot(data = mean_data, aes(x = Temperature, y = mean_major, color = Genotype))
 
 # plot for a single genotype
 
-ggplot(data = filter(ind_data, Genotype == "G34"), aes(x = Temperature, y = mean_major)) + 
-  geom_point() + geom_line(data = filter(predict_mean_major, Genotype == "G34"), aes(x = Temperature, y = Prediction))
+ggplot(data = filter(ind_data, Genotype == "G30"), aes(x = Temperature, y = mean_major)) + 
+  geom_point() + geom_line(data = filter(predict_mean_major, Genotype == "G30"), aes(x = Temperature, y = Prediction))
 
 
 plot(x = ranef(mod_4_mean_major)$Genotype[,1,2], y = ranef(mod_8_mean_major)$Genotype[,1,2])
@@ -498,8 +498,8 @@ ggplot(data = mean_data, aes(x = Temperature, y = mean_minor, color = Genotype))
 
 # plot for a single genotype
 
-ggplot(data = filter(ind_data, Genotype == "G34"), aes(x = Temperature, y = mean_minor)) + 
-  geom_point() + geom_line(data = filter(predict_mean_minor, Genotype == "G34"), aes(x = Temperature, y = Prediction))
+ggplot(data = filter(ind_data, Genotype == "G30"), aes(x = Temperature, y = mean_minor)) + 
+  geom_point() + geom_line(data = filter(predict_mean_minor, Genotype == "G30"), aes(x = Temperature, y = Prediction))
 
 
 plot(x = ranef(mod_7_mean_major)$Genotype[,1,2], y = ranef(mod_7_mean_minor)$Genotype[,1,2])
@@ -628,11 +628,166 @@ ggplot(data = mean_data, aes(x = Temperature, y = mean_ar, color = Genotype)) +
 
 # plot for a single genotype
 
-ggplot(data = filter(ind_data, Genotype == "G34"), aes(x = Temperature, y = mean_ar)) + 
-  geom_point() + geom_line(data = filter(predict_mean_ar, Genotype == "G34"), aes(x = Temperature, y = Prediction))
+ggplot(data = filter(ind_data, Genotype == "G33"), aes(x = Temperature, y = mean_ar)) + 
+  geom_point() + geom_line(data = filter(predict_mean_ar, Genotype == "G33"), aes(x = Temperature, y = Prediction))
+
+### interesting pattern that one might expect. AR changes are about length or width being more sensitive to temperature
+### if both change a lot then you don't see much of a change in AR.
+
+### for example, G69 shows really drastic reductions in both length and width, 
+### but they pretty much cancel out to show little change in AR. 
+
+### in contast, G30 shows a big change in width, but not much in length, and 
+### therefore shows a big change in aspect ratio.
+
+################################################################################
+### Gross Speed
+################################################################################
+
+### visualize relationship with temperature
+
+ggplot(data = ind_data, aes(x = Temperature, y = gross_speed, color = Genotype)) + 
+  geom_point() + geom_smooth(method = 'gam', formula = y ~ s(x, bs = 'tp', k  = 6), se = FALSE)
+
+ggplot(data = mean_data, aes(x = Temperature, y = gross_speed, color = Genotype)) + geom_point() + 
+  geom_smooth()
+
+### not as clear of patterns here as with morphology
+
+ggplot(data = mean_data, aes(x = mean_ar, y = gross_speed)) + geom_point() + geom_smooth(method = 'lm')
+
+### pretty tight relationship with mean_ar though, so I expect we will see something similar 
+### to ar with speed.
+
+### simplest model -- linear with random intercept
+
+# for now, we will just use default priors
+
+mod_1_mean_speed <- brm(formula = gross_speed ~ Temperature + (1|Genotype), data = ind_data,
+                     backend = 'cmdstanr')
+
+summary(mod_1_mean_speed)
+
+plot(mod_1_mean_speed)
+
+conditional_effects(mod_1_mean_speed)
+
+mod_1_mean_speed_loo <- loo(mod_1_mean_speed)
+
+### linear with random intercept and slope
+
+mod_2_mean_speed <- brm(formula = gross_speed ~ Temperature + (1 + Temperature|Genotype), data = ind_data,
+                     backend = 'cmdstanr', cores = getOption("mc.cores", 1))
+
+summary(mod_2_mean_speed)
+
+plot(mod_2_mean_speed)
+
+conditional_effects(mod_2_mean_speed)
+
+mod_2_mean_speed_loo <- loo(mod_2_mean_speed)
+
+### quadratic with random intercept
+
+mod_3_mean_speed <- brm(formula = gross_speed ~ poly(Temperature, 2, raw = TRUE) + (1|Genotype), data = ind_data,
+                     backend = 'cmdstanr', cores = getOption("mc.cores", 1))
+
+summary(mod_3_mean_speed)
+
+plot(mod_3_mean_speed)
+
+conditional_effects(mod_3_mean_speed)
+
+mod_3_mean_speed_loo <- loo(mod_3_mean_speed)
+
+### quadratic with random intercept and slope
+
+mod_4_mean_speed <- brm(formula = gross_speed ~ poly(Temperature, 2, raw = TRUE) + (1 + poly(Temperature, 1, raw = TRUE)|Genotype), data = ind_data,
+                     backend = 'cmdstanr', cores = getOption("mc.cores", 1))
+
+summary(mod_4_mean_speed)
+
+plot(mod_4_mean_speed)
+
+conditional_effects(mod_4_mean_speed)
+
+mod_4_mean_speed_loo <- loo(mod_4_mean_speed)
+
+### quadratic with quadratic random effects
+
+mod_5_mean_speed <- brm(formula = gross_speed ~ poly(Temperature, 2, raw = TRUE) + (1 + poly(Temperature, 2, raw = TRUE)|Genotype), data = ind_data,
+                     backend = 'cmdstanr', cores = getOption("mc.cores", 1))
+
+summary(mod_5_mean_speed)
+
+plot(mod_5_mean_speed)
+
+conditional_effects(mod_5_mean_speed)
+
+mod_5_mean_speed_loo <- loo(mod_5_mean_speed)
+
+### cubic with random intercept
+
+mod_6_mean_speed <- brm(formula = gross_speed ~ poly(Temperature, 3, raw = TRUE) + (1|Genotype), data = ind_data,
+                        backend = 'cmdstanr', cores = getOption("mc.cores", 1))
+
+summary(mod_6_mean_speed)
+
+plot(mod_6_mean_speed)
+
+conditional_effects(mod_6_mean_speed)
+
+mod_6_mean_speed_loo <- loo(mod_6_mean_speed)
+
+### cubic with random intercept and linear term
+
+mod_7_mean_speed <- brm(formula = gross_speed ~ poly(Temperature, 3, raw = TRUE) + (1 + poly(Temperature, 1, raw = TRUE)|Genotype), data = ind_data,
+                        backend = 'cmdstanr', cores = getOption("mc.cores", 1))
+
+summary(mod_7_mean_speed)
+
+plot(mod_7_mean_speed)
+
+conditional_effects(mod_7_mean_speed)
+
+mod_7_mean_speed_loo <- loo(mod_7_mean_speed)
+
+### cubic with random intercept, linear, and quadratic term
+
+mod_8_mean_speed <- brm(formula = gross_speed ~ poly(Temperature, 3, raw = TRUE) + (1 + poly(Temperature, 2, raw = TRUE)|Genotype), data = ind_data,
+                        backend = 'cmdstanr', cores = getOption("mc.cores", 1))
+
+summary(mod_8_mean_speed)
+
+plot(mod_8_mean_speed)
+
+conditional_effects(mod_8_mean_speed)
+
+mod_8_mean_speed_loo <- loo(mod_8_mean_speed)
 
 
+# put together into a new data frame
 
+new_data <- data.frame(Genotype, Temperature)
+
+predict_mean_speed <- posterior_epred(mod_7_mean_speed,
+                                   newdata = new_data)
+
+# get means for each of the predictions
+
+predict_mean_speed <- apply(predict_mean_speed, 2, median)
+
+predict_mean_speed <- data.frame(Genotype, Temperature, Prediction = predict_mean_speed)
+
+# now make the plot
+
+ggplot(data = mean_data, aes(x = Temperature, y = gross_speed, color = Genotype)) + 
+  geom_point() + geom_line(data = predict_mean_speed, aes(x = Temperature, y = Prediction, color = Genotype))
+
+# plot for a single genotype
+
+ggplot(data = filter(ind_data, Genotype == "G38"), aes(x = Temperature, y = gross_speed)) + 
+  geom_point() + geom_line(data = filter(predict_mean_speed, Genotype == "G38"), aes(x = Temperature, y = Prediction))
 
 
 
