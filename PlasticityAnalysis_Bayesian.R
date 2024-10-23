@@ -312,7 +312,7 @@ Temperature <- rep(seq(10, 34, by = 0.2), times = 20)
 
 new_data <- data.frame(Genotype, Temperature)
 
-predict_mean_major <- posterior_epred(mod_4_mean_major,
+predict_mean_major <- posterior_epred(mod_5_mean_major,
                                       newdata = new_data)
 
 # get means for each of the predictions
@@ -328,8 +328,8 @@ ggplot(data = mean_data, aes(x = Temperature, y = mean_major, color = Genotype))
 
 # plot for a single genotype
 
-ggplot(data = filter(ind_data, Genotype == "G30"), aes(x = Temperature, y = mean_major)) + 
-  geom_point() + geom_line(data = filter(predict_mean_major, Genotype == "G30"), aes(x = Temperature, y = Prediction))
+ggplot(data = filter(ind_data, Genotype == "G20"), aes(x = Temperature, y = mean_major)) + 
+  geom_point() + geom_line(data = filter(predict_mean_major, Genotype == "G20"), aes(x = Temperature, y = Prediction))
 
 
 plot(x = ranef(mod_4_mean_major)$Genotype[,1,2], y = ranef(mod_8_mean_major)$Genotype[,1,2])
@@ -765,12 +765,31 @@ conditional_effects(mod_8_mean_speed)
 
 mod_8_mean_speed_loo <- loo(mod_8_mean_speed)
 
+### cubic with random intercept, linear, and quadratic term
+
+# mod_9_mean_speed <- brm(formula = gross_speed ~ poly(Temperature, 3, raw = TRUE) + (1 + poly(Temperature, 3, raw = TRUE)|Genotype), data = ind_data,
+#                         backend = 'cmdstanr', cores = getOption("mc.cores", 1))
+# 
+# summary(mod_9_mean_speed)
+# 
+# plot(mod_9_mean_speed)
+# 
+# conditional_effects(mod_9_mean_speed)
+# 
+# mod_9_mean_speed_loo <- loo(mod_9_mean_speed)
+
+### examine model fits 
+
+loo_compare(mod_1_mean_speed_loo, mod_2_mean_speed_loo, mod_3_mean_speed_loo,
+            mod_4_mean_speed_loo, mod_5_mean_speed_loo, mod_6_mean_speed_loo,
+            mod_7_mean_speed_loo, mod_8_mean_speed_loo)
+
 
 # put together into a new data frame
 
 new_data <- data.frame(Genotype, Temperature)
 
-predict_mean_speed <- posterior_epred(mod_7_mean_speed,
+predict_mean_speed <- posterior_epred(mod_8_mean_speed,
                                    newdata = new_data)
 
 # get means for each of the predictions
@@ -788,6 +807,21 @@ ggplot(data = mean_data, aes(x = Temperature, y = gross_speed, color = Genotype)
 
 ggplot(data = filter(ind_data, Genotype == "G38"), aes(x = Temperature, y = gross_speed)) + 
   geom_point() + geom_line(data = filter(predict_mean_speed, Genotype == "G38"), aes(x = Temperature, y = Prediction))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
