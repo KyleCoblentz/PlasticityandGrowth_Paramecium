@@ -30,19 +30,19 @@ data{
 // parameters
 
 parameters{
-  array[n_genotypes] real<lower = 0> rho_i;
+  array[n_genotypes] real<lower = 0,upper = 1> rho_i;
   real<lower = 0> mu_rho;
   real<lower = 0> sigma_rho;
-  array[n_genotypes] real<lower = 0> Tmax_i;
-  real<lower = 0> mu_Tmax;
+  array[n_genotypes] real Tmax_i;
+  real mu_Tmax;
   real<lower = 0> sigma_Tmax;
-  array[n_genotypes] real delta_i;
-  real mu_delta;
+  array[n_genotypes] real<lower = 0> delta_i;
+  real<lower = 0> mu_delta;
   real<lower = 0> sigma_delta;
   array[n_genotypes] real lambda_i;
   real mu_lambda;
   real<lower = 0> sigma_lambda;
-  real<lower = 0> sigma;
+  array[n_genotypes] real<lower = 0> sigma_i;
 }
 
 // model likelihood and priors
@@ -50,26 +50,22 @@ parameters{
 model{
   
   // priors
-  mu_rho ~ normal(0, 25);
-  sigma_rho ~ exponential(1);
-  mu_Tmax ~ normal(40,25);
-  sigma_Tmax ~ exponential(1);
-  mu_delta ~ normal(0, 25);
-  sigma_delta ~ exponential(1);
-  mu_lambda ~ normal(0, 25);
-  sigma_lambda ~ exponential(1);
+  mu_rho ~ uniform(0, 1);
+  sigma_rho ~ normal(0, 0.5);
+  mu_Tmax ~ normal(40, 5);
+  sigma_Tmax ~ normal(0, 10);
+  mu_delta ~ normal(0, 10);
+  sigma_delta ~ normal(0, 5);
+  mu_lambda ~ normal(0, 2.5);
+  sigma_lambda ~ normal(0, 1);
   
-    sigma ~ exponential(1);
+  for(i in 1:n_genotypes){
+  sigma_i[i] ~ normal(0, 10);
+  } 
   
   // likelihoods
   
-  for(i in 1:N){
-    
-    growth[i] ~ normal(exp(rho_i[genotype[i]]*temp[i]) - exp(rho_i[genotype[i]]*Tmax_i[genotype[i]] - ((Tmax_i[genotype[i]] - temp[i])/delta_i[genotype[i]])) + lambda_i[genotype[i]], sigma);
-    
-  }
-  
-  for(i in 1:n_genotypes) {
+    for(i in 1:n_genotypes) {
   
     rho_i[i] ~ normal(mu_rho, sigma_rho);
     
@@ -79,6 +75,12 @@ model{
     
     lambda_i[i] ~ normal(mu_lambda, sigma_lambda);
   
+  }
+  
+  for(i in 1:N){
+    
+    growth[i] ~ normal(exp(rho_i[genotype[i]]*temp[i]) - exp(rho_i[genotype[i]]*Tmax_i[genotype[i]] - ((Tmax_i[genotype[i]] - temp[i])/delta_i[genotype[i]])) + lambda_i[genotype[i]], sigma_i[genotype[i]]);
+    
   }
   
 }
