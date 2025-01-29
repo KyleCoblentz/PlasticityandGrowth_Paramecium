@@ -1,0 +1,10 @@
+---
+title: "Preliminary Plasticity Analysis"
+author: "Kyle E. Coblentz"
+date: "2025-01-29"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```

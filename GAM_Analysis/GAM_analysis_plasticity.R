@@ -33,6 +33,8 @@ summary(gam_area)
 
 draw(gam_area, residuals = TRUE)
 
+ggplot(data = morph_data, aes(x = Temperature, y = mean_area)) + geom_point()
+
 newdata_area <- data.frame(Temperature = rep(seq(10, 34, by = 0.1),20),
                            Line = rep(unique(morph_data$Line), each = 241))
 
@@ -45,7 +47,8 @@ area_predictions <- newdata_area %>% group_by(Line) %>%
             min_area = min(area_predictions),
             max_area = max(area_predictions),
             range_area = max_area-min_area,
-            stand_range_area = range_area/max_area)
+            stand_range_area = range_area/max_area, 
+            Temp_at_minarea = Temperature[which.min(area_predictions)])
 
 ### length
 
@@ -72,7 +75,8 @@ length_predictions <- newdata_length %>% group_by(Line) %>%
             min_length = min(length_predictions),
             max_length = max(length_predictions),
             range_length = max_length-min_length, 
-            stand_range_length = range_length/max_length)
+            stand_range_length = range_length/max_length,
+            Temp_at_minlength = Temperature[which.min(length_predictions)])
 
 ### width
 
@@ -142,6 +146,8 @@ summary(gam_speed)
 
 draw(gam_speed, residuals = TRUE)
 
+ggplot(data = morph_data, aes(x = Temperature, y = gross_speed)) + geom_point()
+
 newdata_speed <- data.frame(Temperature = rep(seq(10, 34, by = 0.1),20),
                          Line = rep(unique(morph_data$Line), each = 241))
 
@@ -201,6 +207,12 @@ tpc_predictions <- newdata_tpc %>% group_by(Line) %>%
             range_growth = max_growth-min_growth,
             stand_range_growth = range_growth/max_growth)
 
+tpc_descriptions <- newdata_tpc %>% group_by(Line) %>% 
+  summarise(topt = Temperature[which.max(predict_tpc)],
+            ctmin = Temperature[which.min(abs(predict_tpc[which(Temperature < 20)] - 0))],
+            ctmax = Temperature[which(Temperature>32)][which.min(abs(predict_tpc[which(Temperature > 32)] - 0))],
+            thermal_range = ctmax - ctmin)
+
 
 
 col_data <- full_join(area_predictions, tpc_predictions, by = "Line")
@@ -213,8 +225,45 @@ col_data <- full_join(col_data, ar_predictions, by = "Line")
 
 col_data <- full_join(col_data, speed_predictions, by = "Line")
 
-ggplot(data = col_data, aes(x = stand_range_area, y = stand_range_ar)) + geom_point() +
+col_data <- full_join(col_data, tpc_descriptions, by = "Line")
+
+ggplot(data = col_data, aes(x = stand_range_area, y = stand_range_growth)) + geom_point() +
   geom_smooth(method = 'lm')
+
+plot(x = seq(10, 34, by = 0.1), 
+     y = select(filter(newdata_length, Line == 'G102'), length_predictions)$length_predictions/(max(select(filter(newdata_length, Line == 'G102'), length_predictions)$length_predictions)))
+
+points(select(filter(newdata_ar, Line == 'G102'), ar_predictions)$ar_predictions/max(select(filter(newdata_ar, Line == 'G102'), ar_predictions)$ar_predictions))
+
+plot(x = select(filter(newdata_length, Line == 'G69'), length_predictions)$length_predictions, 
+     y = select(filter(newdata_tpc, Line == 'G69'), predict_tpc)$predict_tpc)
+
+points(select(filter(newdata_length, Line == 'G102'), length_predictions)$length_predictions/(max(select(filter(newdata_length, Line == 'G102'), length_predictions)$length_predictions)))
+
+### want to create a data set with normalized data for all of the variables to look at correlations
+
+### can potentially also just extract the predictions for each varaible at particular temperatures
+### and then look at correlations.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
