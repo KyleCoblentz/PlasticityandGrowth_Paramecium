@@ -1,10 +1,85 @@
 ---
-title: "Preliminary Plasticity Analysis"
-author: "Kyle E. Coblentz"
-date: "2025-01-29"
+title: "Making sense of Paramecium plasticity and growth across temperatures"
 output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+setwd('C:/Users/kylec/Documents/GitHub/FR_n-prey-at-a-time/ms/PlasticityandGrowth_Paramecium/GAM_Analysis/')
+
+library(dplyr); library(ggplot2); library(cowplot); library(mgcv); library(gratia)
+
+
+
+
 ```
+
+## Introduction
+
+One goal of our project is to gain a better understanding of both the morphological and growth plasticity of paramecia in response to temperature. One reason for this is that the changes we see in paramecia under our warm and cold treatments are likely to partly be attributable to plasticity. Another reason is that plasticity is likely to play an important role in determining which outcrossed lines in our original evolution populations were likely to do well at high and low and temperatures. For example, some outcrossed lines may perform better than others at higher versus colder temperatures and vice versa. Moreover, there are some questions that we might be able to examine about plasticity in morphology and growth that are broadly interesting. For example, is degree of plasticity in morphology related to the degree of plasticity in growth across temperatures? What changes in morphological traits are associated with changes in growth in paramecium?
+
+## What did we do?
+
+The data we have to attempt to answer these questions comes from two experiments that we performed last year. The first was our TPC experiment for the 20 outcrossed lines that we used to start our original evolution populations. The second was a plasticity experiment in which we acclimated each of the 20 lines across different temperatures and then video phenotyped them to examine morphological and phenotypic plasticity across temperatures.
+
+## Characterizing Morphological and Behavioral Plasticity
+
+The first thing we can do is try to characterize the morphological and behavioral plasticity of the paramecia aross temperatures. First, we will load the data and make some modifications to add some necessary information that is currently in the video file names. We will also drop the measurements from the highest temperature since very few cells survived at the highest temperature over the acclimation period.
+
+```{r}
+
+morph_data <- read.csv('Plast_StartPop_Data.csv')
+
+morph_data <- morph_data %>% mutate(Line = as.factor(sapply(strsplit(morph_data$file, split = "_"),'[[', 4)),
+                                      Temperature = as.numeric(sapply(strsplit(morph_data$file, split = "_"),'[[', 3)),
+                                    LineTemp = paste(Line, Temperature, sep = "_"))
+
+morph_data <- filter(morph_data, Temperature < 37)
+
+```
+
+Now we can look at various morphological and behavioral traits and characterize their plasticity with temperature (we will focus on length, width, aspect ratio, and speed). To do so, I will use Generalized Additive Models (GAMs) as these models are capable of flexibly fitting relationships when they are expected to be nonlinear and potentially so in a way that is not necessarily known a priori. Furthermore, it is easy to use predictions from these models to characterize the plasticity of different outcrossed lines. Below, I will run through each of the phenotypes.
+
+### Length
+
+First, we can look at a plot of paramecium length across temperatures.
+
+```{r}
+
+ggplot(data = morph_data, aes(x = Temperature, y = mean_major)) + geom_point() + geom_smooth(method = 'gam', formula = y ~ s(x, k = 5, bs = 'tp'), se = FALSE) + 
+  facet_wrap(facets = "Line", nrow = 4, ncol = 5)
+
+```
+There is a lot going on here, but, what we see generally is a tendency towards smaller lengths (mean major axis) as temperature increases with a slight increase in length at the highest temperature. Now we can run the formal GAMs and look at the resulting summary and plots.
+
+```{r}
+
+gam_length <- gam(formula = mean_major ~ Line + s(Temperature, k = 5, bs = 'tp', by = Line), data = morph_data, method = 'REML')
+
+summary(gam_length)
+
+```
+
+```{r}
+
+gam_length_noint <- gam(formula = mean_major ~ Line + s(Temperature, k = 5, bs = 'tp'), data = morph_data, method = 'REML')
+
+summary(gam_length_noint)
+
+AIC(gam_length)
+
+AIC(gam_length_noint)
+
+```
+
+
+
+
+
+
+
+
+
+
+
