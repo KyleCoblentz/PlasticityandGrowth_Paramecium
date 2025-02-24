@@ -47,8 +47,7 @@ area_predictions <- newdata_area %>% group_by(Line) %>%
             min_area = min(area_predictions),
             max_area = max(area_predictions),
             range_area = max_area-min_area,
-            stand_range_area = range_area/max_area, 
-            Temp_at_minarea = Temperature[which.min(area_predictions)])
+            stand_range_area = range_area/max_area)
 
 ### length
 
@@ -75,8 +74,7 @@ length_predictions <- newdata_length %>% group_by(Line) %>%
             min_length = min(length_predictions),
             max_length = max(length_predictions),
             range_length = max_length-min_length, 
-            stand_range_length = range_length/max_length,
-            Temp_at_minlength = Temperature[which.min(length_predictions)])
+            stand_range_length = range_length/max_length)
 
 ### width
 

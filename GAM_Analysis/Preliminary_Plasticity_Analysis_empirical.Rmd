@@ -17,7 +17,7 @@ library(dplyr); library(ggplot2); library(cowplot); library(mgcv); library(grati
 
 ## Introduction
 
-One goal of our project is to gain a better understanding of both the morphological and growth plasticity of paramecia in response to temperature. One reason for this is that the changes we see in paramecia under our warm and cold treatments are likely to partly be attributable to plasticity. Another reason is that plasticity is likely to play an important role in determining which outcrossed lines in our original evolution populations were likely to do well at high and low and temperatures. For example, some outcrossed lines may perform better than others at higher versus colder temperatures and vice versa. Moreover, there are some questions that we might be able to examine about plasticity in morphology and growth that are broadly interesting. For example, is degree of plasticity in morphology related to the degree of plasticity in growth across temperatures? What changes in morphological traits are associated with changes in growth in paramecium?
+One goal of our project is to gain a better understanding of both the morphological and growth plasticity of paramecia in response to temperature. One reason for this is that the changes we see in paramecia under our warm and cold treatments are likely to be attributable partly to plasticity. Another reason is that plasticity is likely to play an important role in determining which outcrossed lines in our original evolution populations were likely to do well at high and low and temperatures. For example, some outcrossed lines may perform better than others at higher versus colder temperatures and vice versa. Moreover, there are some questions that we might be able to examine about plasticity in morphology and growth that are broadly interesting. For example, is the degree of plasticity in morphology related to the degree of plasticity in growth across temperatures? What changes in morphological traits are associated with changes in growth in paramecium?
 
 ## What did we do?
 
@@ -39,7 +39,7 @@ morph_data <- filter(morph_data, Temperature < 37)
 
 ```
 
-Now we can look at various morphological and behavioral traits and characterize their plasticity with temperature (we will focus on length, width, aspect ratio, and speed). To do so, I will use Generalized Additive Models (GAMs) as these models are capable of flexibly fitting relationships when they are expected to be nonlinear and potentially so in a way that is not necessarily known a priori. Furthermore, it is easy to use predictions from these models to characterize the plasticity of different outcrossed lines. Below, I will run through each of the phenotypes.
+Now we can look at various morphological and behavioral traits and characterize their plasticity with temperature (we will focus on length, width, aspect ratio, and speed). To do so, I will use Generalized Additive Models (GAMs) as these models are capable of fitting flexible, nonlinear relationships when the forms of these relationships are not necessarily known *a priori*. 
 
 ### Length
 
@@ -51,7 +51,7 @@ ggplot(data = morph_data, aes(x = Temperature, y = mean_major)) + geom_point() +
   facet_wrap(facets = "Line", nrow = 4, ncol = 5)
 
 ```
-There is a lot going on here, but, what we see generally is a tendency towards smaller lengths (mean major axis) as temperature increases with a slight increase in length at the highest temperature. Now we can run the formal GAMs and look at the resulting summary and plots.
+There is a lot going on, but, what we see generally is a tendency towards smaller lengths (mean major axis) as temperature increases with a slight increase in length at the highest temperature. Now we can run the formal GAMs and look at the resulting summary and plots.
 
 ```{r}
 
@@ -187,9 +187,9 @@ AIC(gam_speed, gam_speed_noint)
 
 And, again we see that AIC score is much lower for the model including the interaction ($\Delta$AIC = `r AIC(gam_speed_noint) - AIC(gam_speed)`).
 
-### Examining the structure of plasticity in Paramecium
+### Examining the structure of morphological plasticity in Paramecium
 
-From our previous results, we know that genetic variation in the paramecia is present for size, aspect ratio, and speed. We also know that variation in length and width are correlated and aspect ratio and speed, but these are not correlated with one another. One question we might be interested in is whether plasticity follows a similar pattern? To examine this, we can look at some plots for each outcrossed line that asssess the relationship within each line between the morphological and movement variables and temperature.
+From our previous results, we know that genetic variation in the paramecia is present for size, aspect ratio, and speed. We also know that variation in length and width are correlated and aspect ratio and speed, but these are not correlated with one another. One question we might be interested in is whether plasticity follows a similar pattern? To examine this, we can look at some plots for each outcrossed line that assess the relationship within each line between the morphological and movement variables and temperature.
 
 First, we can look at length and width.
 
@@ -213,7 +213,7 @@ ggplot(data = morph_data, aes(x = mean_major, y = mean_ar)) + geom_point(aes(col
 
 ```
 
-Here, we see far less evidence for a relationship with generally shallow slopes in the relationship between length and aspect ratio.
+Here, we see generally shallower slopes in the relationship between length and aspect ratio.
 
 Let's also look at length and speed.
 
@@ -225,7 +225,7 @@ ggplot(data = morph_data, aes(x = mean_major, y = gross_speed)) + geom_point(aes
 
 ```
 
-Here, we do see that some outcrossed lines seem to show a relationship between speed and length, but that isn't universal across all of the outcrossed lines.
+Here, we do see that some outcrossed lines seem to show a relationship between speed and length, but, again, the relationships aren't quite as consistent as the relationships between length and width.
 
 We can also look at the relationships between width, aspect ratio, and speed.
 
@@ -257,18 +257,20 @@ ggplot(data = morph_data, aes(x = mean_ar, y = gross_speed)) + geom_point(aes(co
 
 ```
 
-Here, we see fairly strong relationships between aspect ratio and speed as we had found previously across outcrossed lines. There is also a tendency for the highest aspect ratios and speeds for each outcrossed line to be at the higher temperatures. What does this mean overall? I think that it supports that plasticity is occurring on the same general axes within outcrossed lines as we see for genetic variation across outcrossed lines. That is, there are strong correlations in plasticity between length and width and between aspect ratio and speed, but weaker correlations across the combinations of the variables.
+Here, again, we see fairly strong and consistent relationships between aspect ratio and speed as we had found previously across outcrossed lines in length and width. There is also a tendency for the highest aspect ratios and speeds for each outcrossed line to be at the higher temperatures. 
+
+What does this mean overall? I think that it supports the idea that plasticity is occurring on the same general axes within outcrossed lines as we see for genetic variation across outcrossed lines. That is, there are strong correlations in plasticity between length and width and between aspect ratio and speed, but weaker correlations across the combinations of the variables just as we saw with variation across outcrossed lines at a single temperature.
 
 ## Quantifying Plasticity
 
-Now that we have looked at how the different outcrossed lines are responding to temperature in their morphology and movement, we want to look at how plastic each of the outcrossed lines are in their phenotypes. To do this, we can just define the degree of plasticity as the range of the mean trait across the temperature range for each outcrossed line. This feels like a fairly intuitive, ad hoc way to define the degree of plasticity.
+Now that we have looked at how the different outcrossed lines are responding to temperature in their morphology and movement, we want to look at how plastic each of the outcrossed lines are in their phenotypes. To do this, we will first define the degree of plasticity as the range of the mean trait across the temperature range for each outcrossed line. This feels like a fairly intuitive, ad hoc way to define the degree of plasticity.
 
 ```{r}
 
 ### get data for length
 
-summ_length <- morph_data %>% group_by(Line, Temperature) %>% summarise(length = mean(mean_major)) %>% ungroup() %>% group_by(Line) %>% 
-  summarise(mean_length = mean(length),
+summ_length <- morph_data %>% group_by(Line, Temperature) %>% summarise(length = median(mean_major)) %>% ungroup() %>% group_by(Line) %>% 
+  summarise(mean_length = median(length),
             max_length = max(length),
             min_length = min(length),
             range_length = max_length - min_length,
@@ -276,7 +278,7 @@ summ_length <- morph_data %>% group_by(Line, Temperature) %>% summarise(length =
 
 ### predictions for width
 
-summ_width <- morph_data %>% group_by(Line, Temperature) %>% summarise(width = mean(mean_minor)) %>% ungroup() %>% group_by(Line) %>% 
+summ_width <- morph_data %>% group_by(Line, Temperature) %>% summarise(width = median(mean_minor)) %>% ungroup() %>% group_by(Line) %>% 
   summarise(mean_width = mean(width),
             max_width = max(width),
             min_width = min(width),
@@ -285,7 +287,7 @@ summ_width <- morph_data %>% group_by(Line, Temperature) %>% summarise(width = m
 
 ### predictions for aspect ratio
 
-summ_ar <- morph_data %>% group_by(Line, Temperature) %>% summarise(ar = mean(mean_ar)) %>% ungroup() %>% group_by(Line) %>% 
+summ_ar <- morph_data %>% group_by(Line, Temperature) %>% summarise(ar = median(mean_ar)) %>% ungroup() %>% group_by(Line) %>% 
   summarise(mean_ar = mean(ar),
             max_ar = max(ar),
             min_ar = min(ar),
@@ -294,7 +296,7 @@ summ_ar <- morph_data %>% group_by(Line, Temperature) %>% summarise(ar = mean(me
 
 ### predictions for speed
 
-summ_speed <- morph_data %>% group_by(Line, Temperature) %>% summarise(speed = mean(gross_speed)) %>% ungroup() %>% group_by(Line) %>% 
+summ_speed <- morph_data %>% group_by(Line, Temperature) %>% summarise(speed = median(gross_speed)) %>% ungroup() %>% group_by(Line) %>% 
   summarise(mean_speed = mean(speed),
             max_speed = max(speed),
             min_speed = min(speed),
@@ -366,7 +368,7 @@ These regressions show fairly strong evidence in our data that plasticity in len
 
 ## Growth across temperatures
 
-Now, we want to determine whether there are relationships between the phenotypes of outcrossed lines across temperatures and the population growth rates of the outcrossed lines. First, we will load the growth rate data and make some modifications and then combine the growth rate and phenotype data. To combine the data, we will use the predictions from GAMs for each of the phenotypes as the 'observed' phenotype of the outcrossed line at each temperature.
+Now, we want to determine whether there are relationships between the phenotypes of outcrossed lines across temperatures and the population growth rates of the outcrossed lines. First, we will load the growth rate data and make some modifications and then combine the growth rate and phenotype data. To combine the data, we will use the means of the phenotypes as the 'observed' phenotype of the outcrossed line at each temperature.
 
 ```{r}
 
@@ -495,7 +497,7 @@ So, what does all of this mean? Well, it appears that within outcrossed lines, c
 
 ## Plasticity in morphology and movement
 
-Next, we want to ask whether the extent to which an outcrossed line is plastic in its morphology and movement influences the extent to which its growth rate changes across temperatures. First, we will just examine plasticity in each of the phenotypes and whether it is associated with the extent to which growth changed for each outcrossed line. We will quantify plasticity in growth similar to the way that we quantified plasticity in morphology and movement. That is, by averaging the measured growth rates at each of the temperatures. Before, we do that, we will fit a GAM to the TPC data just to examine differences among outcrossed lines.
+Next, we want to ask whether the extent to which an outcrossed line is plastic in its morphology and movement is related to the extent to which its growth rate changes across temperatures. First, we will just examine plasticity in each of the phenotypes and whether it is associated with the extent to which growth changed for each outcrossed line. We will quantify plasticity in growth similar to the way that we quantified plasticity in morphology and movement. That is, by averaging the measured growth rates at each of the temperatures and then calculating the range in growth across temperatures. Before, we do that, we will fit a GAM to the TPC data just to examine differences among outcrossed lines.
 
 ```{r}
 
@@ -505,17 +507,17 @@ tpc_fit <- gam(formula = Growth.Rate.Hours ~ Line + s(Temperature, k = 5, bs = '
 
 summary(tpc_fit)
 
-tpc_fit_noint <- gam(formula = Growth.Rate.Hours ~ s(Temperature, k = 5, bs = 'tp'), data = growth_data, method = 'REML')
+tpc_fit_noint <- gam(formula = Growth.Rate.Hours ~ Line + s(Temperature, k = 5, bs = 'tp'), data = growth_data, method = 'REML')
 
 AIC(tpc_fit, tpc_fit_noint)
 
 ```
-Now we can get the plasticity of the growth rate for each of the outcrossed lines.
+The GAMs here actually suggest that a model including Line but no interaction between temperature and Line actually performs best with the growth data. This suggests that there is potentially a genetic effect (moving the line up and down), an environmental effect (how the line changes with temperature), but no gene by environment interaction in the TPCs. That being said, we can still get the plasticity of the growth rate for each of the outcrossed lines.
 
 ```{r}
 
-tpc_means <- growth_data %>% group_by(Line, Temperature) %>% 
-  summarise(growth = mean(Growth.Rate.Hours)) %>% 
+tpc_means <- growth_data %>% filter(Temperature <= 34) %>% group_by(Line, Temperature) %>% 
+  summarise(growth = median(Growth.Rate.Hours)) %>% 
   ungroup() %>% group_by(Line) %>% 
   summarise(mean_growth = mean(growth),
             max_growth = max(growth),
@@ -534,18 +536,18 @@ plast_growth_data <- full_join(plast_morph_data, tpc_means, by = 'Line')
 ### length plasticity
 
 ggplot(data = plast_growth_data, aes(x = range_length, y = range_growth)) +
-  geom_point() + geom_smooth(method = 'lm', se = FALSE)
+  geom_point() + geom_smooth(method = 'lm', se = TRUE)
 
 ### width plasticity
 
 ggplot(data = plast_growth_data, aes(x = range_width, y = range_growth)) +
-  geom_point() + geom_smooth(method = 'lm', se = FALSE)
+  geom_point() + geom_smooth(method = 'lm', se = TRUE)
 
 ggplot(data = plast_growth_data, aes(x = range_ar, y = range_growth)) +
-  geom_point() + geom_smooth(method = 'lm', se = FALSE)
+  geom_point() + geom_smooth(method = 'lm', se = TRUE)
 
 ggplot(data = plast_growth_data, aes(x = range_speed, y = range_growth)) +
-  geom_point() + geom_smooth(method = 'lm', se = FALSE)
+  geom_point() + geom_smooth(method = 'lm', se = TRUE)
 
 
 ```
@@ -575,13 +577,19 @@ colnames(hull_data)[1] <- 'Line'
 
 plast_growth_data <- full_join(plast_growth_data, hull_data, by = 'Line')
 
-ggplot(data = plast_growth_data, aes(x = Area, y = range_growth)) + geom_point()
+ggplot(data = plast_growth_data, aes(x = Area, y = range_growth)) + geom_point() + geom_smooth(method = 'lm')
 
 summary(lm(range_growth ~ Area, data = plast_growth_data))
 
 ```
 
-Doesn't look like anything is going on ... 
+I think our original hypothesis here was that morphological and movement plasticity would potentially allow the paramecia to buffer the effects of temperature and that this would lead to less plasticity in growth with temperature. The data, however, seem to show that there is no relationship between the degree of change in morphology and movement and the degree of change in growth rates. This feels a bit strange given that we do see relationships between things like length and aspect ratio and growth. I am currently thinking that this lack of relationship means that within an outcrossed line, size changes (for example) are associated with changes in growth rates. But, across outcrossed lines, some lines change their size a little whereas some lines change their sizes a lot and yet those two lines may show the same degree of growth rate change.
+
+## Conclusions
+
+To wrap all of this up, what have we done and found?
+
+In response to changes in temperature, the paramecia do exhibit phenotypic plasticity. In general, paramecium get shorter, less wide, skinnier and faster as temperatures increase, but this relationship is often nonlinear with evidence for a switch in this pattern at the highest temperatures. Moreover, changes in length and width and strongly correlated with one another as are changes in aspect ratio and speed. The correlations in traits between these groups is less strong which is also true for genetic variation among outcrossed lines. We also find that these morphological and movement changes are associated with changes in paramecium growth within outcrossed lines. That is, as the paramecia within outcrossed lines get smaller, skinnier, and faster, they also tend to have higher growth rates. However, across outcrossed lines, we do not find a relationship between the extent to which morphology and movement change and the total extent to which paramecium growth rates change either from a univariate or multivariate view of their morphological and movement changes. Looking forward to folks' thoughts about this.
 
 
 
