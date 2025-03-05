@@ -1,0 +1,276 @@
+---
+title: "Examining Different Definitions of Plasticity in Growth and Morphology across Temperatures"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+
+### load libraries
+
+library(dplyr); library(ggplot2); library(cowplot); library(mgcv); library(gratia); library(ggbiplot); library(lmodel2)
+
+### set working directory
+
+setwd("~/GitHub/FR_n-prey-at-a-time/ms/PlasticityandGrowth_Paramecium/GAM_Analysis")
+
+
+```
+
+## Introduction
+
+In the previous document, I showed how outcrossed lines of Paramecium varied in their morphology and movement with temperature, how their growth rates changed with temperature, and how morphology and movement were associated with changes in growth rates within outcrossed lines. One hypothesis that we had that we did not find evidence for, however, was that the overall flexibility or magnitude of plasticity in morphology and movement among outcrossed lines would be related to their degree of plasticity in growth rate. In particular, we hypothesized that outcrossed lines with greater plasticity in morphology/movement across temperature would show less variable growth rates across temperature as, presumably, the morphological/behavioral changes could buffer their growth rate responses to temperature.
+
+In these first analyses of plasticity in morphology/movement and growth, we used the overall magnitude of change in phenotypes as our measure of phenotypic plasticity across the temperature range (the maximum mean value across the temperatures minus the minimum mean value across the temperatures). There were some concerns, however, particularly for the growth rate tpc's, that this metric wasn't really capturing plasticity in the growth rates. In particular, one suggestion was that a better metric might be the thermal breadth -- the range of temperatures over which at least some proportion of the maximum in performance is achieved (e.g. in our case, the range of temperatures over which an outcrossed line acheives a growth rate that is at least some proportion of its maximum growth rate). Furthermore, John had also mentioned looking at whether the area under the total curve was related to morphology/movement plasticity. Last, there were also some ideas about measuring plasticity of the morphology and movement variables differently. Specifically, one idea was to use the total amount of change in the phenotype and another was to use the amount of morphological/movement change that occurred between an anchor point (e.g. the thermal optimum ($t_{opt}$ or the temperature at which the maximum of the tpc occurs)) and calculate the total amount of change between the say the edges of the temperature limits of the thermal breadth and the thermal optimum.
+
+In this document, I will try to address these comments and perform analyses to look at whether any of these different definitions of plasticity provide us with a different answer than we arrived at previously.
+
+### Calculating Thermal Breadth
+
+The first step we will take is to go ahead and calculate the thermal breadth. To do so, I will first load the growth data, then fit TPC's to the data using GAMs, and then use the predicted growth rates from the GAMs to calculate the TPC metrics of interest including thermal breadth. I will also include a summary of the GAM fits and plots of the GAM fits to the data. 
+
+```{r}
+
+### load the growth rate data
+
+tpc_data <- read.csv('StartPop_TPC.csv')
+
+### clean up the data a bit
+
+tpc_data <- tpc_data %>% filter(!is.na(Growth.Rate.Hours) & !is.infinite(Growth.Rate.Hours))
+
+tpc_data <- tpc_data %>% filter(Genotype != 'blank')
+
+tpc_data$Genotype <- as.factor(paste0('G', tpc_data$Genotype))
+
+colnames(tpc_data)[which(colnames(tpc_data) == 'Genotype')] <- 'Line'
+
+tpc_data$Date.paramecium.introduced <- as.factor(tpc_data$Date.paramecium.introduced)
+
+### fit a GAM to TPC data (note that this time I have included a random effect
+### of experimental day which I forgot to do last time)
+
+tpc_gam <- gam(formula = Growth.Rate.Hours ~ Line + s(Temperature, k = 6, bs = 'tp', by = Line) + s(Date.paramecium.introduced, bs = 're'), data = tpc_data,
+               method = 'REML')
+
+summary(tpc_gam)
+
+for (i in 1:length(smooths(tpc_gam))) {
+  out <- draw(tpc_gam, select = i, residuals = TRUE)     
+  print(out) }
+
+
+```
+
+Now we will need to use the fits from the GAMs to get predictions and then use those predictions to calculate the the variables describing the TPC that we might care about (thermal breadth, t_opt, maximum growth rate, etc.). To do so, I'm going to write a little function called tpc_summary that takes the GAM fits, a vector giving the different line names, the range of temperatures to consider, and, for the calculation of thermal breadth, which proportion of the maximum growth rate to consider. The function then runs across all of the lines and calculates summary statistics of the TPCs. I'll also run this function on our GAM fits.
+
+```{r, results = "hide"}
+
+tpc_summary <- function(gam_fit, factor, temp_low, temp_high, breadth_proportion){
+  
+  out_data <- matrix(nrow = 20, ncol = 8) # columns are Line, max_growth, t_opt, t_min, t_max, thermal_range_min, thermal_range_max, thermal_range
+  
+  for(i in 1:length(unique(factor))){
+    
+    line_prediction_data <- data.frame(Line = rep(unique(factor)[i], times = length(seq(temp_low, temp_high, by = 0.1))),
+                                       Date.paramecium.introduced = rep('2024-02-16', times = length(seq(temp_low, temp_high, by = 0.1))),
+                                       Temperature = seq(temp_low, temp_high, by = 0.1))
+    
+    gam_prediction <- predict.gam(gam_fit, newdata = line_prediction_data, exclude = "s(Date.paramecium.introduced)")
+    
+    prediction_together <- cbind(line_prediction_data, gam_prediction)
+    
+    max_growth <- max(prediction_together$gam_prediction)
+    
+    t_opt <- prediction_together$Temperature[which(prediction_together$gam_prediction == max_growth)]
+    
+    below_opt <- prediction_together[which(prediction_together$Temperature < t_opt),]
+    
+    t_min <- below_opt$Temperature[which(abs(below_opt$gam_prediction) == min(abs(below_opt$gam_prediction)))]
+    
+    above_opt <- prediction_together[which(prediction_together$Temperature > t_opt),]
+    
+    t_max <- above_opt$Temperature[which(abs(above_opt$gam_prediction) == min(abs(above_opt$gam_prediction)))]
+    
+    in_range <- filter(prediction_together, gam_prediction >= breadth_proportion*max_growth)
+    
+    thermal_range_min <- in_range$Temperature[1]
+    
+    thermal_range_max <- in_range$Temperature[nrow(in_range)]
+    
+    thermal_range <- thermal_range_max - thermal_range_min
+    
+    out_data[i,1] <- as.character(unique(factor)[i])
+    
+    out_data[i,2] <- max_growth
+    
+    out_data[i,3] <- t_opt
+    
+    out_data[i,4] <- t_min
+    
+    out_data[i,5] <- t_max
+    
+    out_data[i,6] <- thermal_range_min
+    
+    out_data[i,7] <- thermal_range_max
+    
+    out_data[i,8] <- thermal_range
+    
+    print(i)
+    
+  }
+  
+  out_data <- as.data.frame(out_data)
+  
+  colnames(out_data) <- c("Line", 'max_growth', 't_opt', 't_min',
+                          't_max', 'thermal_range_min', 'thermal_range_max', 'thermal_range')
+  
+  for(i in 2:8){
+  
+  out_data[,i] <- as.numeric(paste(out_data[,i]))
+  
+  }
+  
+  return(out_data)
+  
+}
+
+
+### run function on our GAM fits
+
+tpc_summary_data <- tpc_summary(gam_fit = tpc_gam, factor = tpc_data$Line, temp_low = 0, temp_high = 45, breadth_proportion = 0.5)
+
+
+
+```
+
+Now we can look at some summaries of the summary, and look at some relationships among some of the TPC descriptions just to get a sense of what is going on with TPCs across the outcrossed lines. First, we can just look at some histograms of the different variables we calculated
+
+```{r}
+
+### max_growth
+
+ggplot(data = tpc_summary_data, aes(x = max_growth)) + geom_histogram()
+
+### we can definitely see our one outlier outcrossed line G20 here with the
+### much lower maximum growth rate relative to all of the other 
+### outcrossed lines
+
+### t_opt
+
+ggplot(data = tpc_summary_data, aes(x = t_opt)) + geom_histogram()
+
+### optimal temperatures range from about 27 to 32 degrees celsius. In 
+### fahrenhiet this is about a 9 degree range from 80.6 to 89.6.
+
+### t_min
+
+ggplot(data = tpc_summary_data, aes(x = t_min)) + geom_histogram()
+
+### we also see some variation in predicted minimum temperatures with most 
+### falling between 7 and 10 degrees celsius
+
+### t_max 
+
+ggplot(data = tpc_summary_data, aes(x = t_max)) + geom_histogram()
+
+### we also see some variation in the predicted upper thermal limits with 
+### critical temperatures ranging from 37 to nearly 44 degrees celsius.
+
+### thermal breadth
+
+ggplot(data = tpc_summary_data, aes(x = thermal_range)) + geom_histogram()
+
+### we also see variation in thermal breadth (here the range of temperatures 
+### at which the outcrossed line can maintain 50% of its maximum growth rate).
+### The thermal breadths range from ~14.5 degrees to ~21.5.
+
+
+```
+
+Now that we have had a look at the TPC description variables, we can look at some correlations to see if there are any potential relationships among the TPC description variables. I don't really have too many *a priori* hypotheses here. One might be that we would expect a negative relationship between max growth rate and thermal breadth if there is a thermal generalist-specialist trade-off across the outcrossed lines. The other might be that we would expect that outcrossed lines with greater thermal ranges would have lower, lower critical thermal limits and higher upper critical thermal limits.
+
+```{r}
+
+### maximum growth and the other variables
+
+ggplot(data = tpc_summary_data, aes(x = t_opt, y = max_growth)) + 
+  geom_point() + geom_smooth(method = 'lm') + ggtitle('Thermal Optimum and Max Growth Rate')
+
+### no relationship between maximum growth rate and t_opt
+
+ggplot(data = tpc_summary_data, aes(x = t_min, y = max_growth)) + 
+  geom_point() + geom_smooth(method = 'lm') + ggtitle('Critical Lower Temperature and Max Growth Rate')
+
+### no relationship between maxmimum growth rate and t_min
+
+ggplot(data = tpc_summary_data, aes(x = t_max, y = max_growth)) + 
+  geom_point() + geom_smooth(method = 'lm') + ggtitle('Critical Upper Temperature and Max Growth Rate')
+
+### no relationship between maximum growth rate and t_max
+
+ggplot(data = tpc_summary_data, aes(x = thermal_range, y = max_growth)) + 
+  geom_point() + geom_smooth(method = 'lm') + ggtitle('Thermal Breadth and Max Growth Rate')
+
+### it looks like there might be some influence here of outlier outcrossed line
+### G20
+
+ggplot(data = filter(tpc_summary_data, Line != 'G20'), aes(x = thermal_range, y = max_growth)) + 
+  geom_point() + geom_smooth(method = 'lm') + ggtitle('Thermal Breadth and Max Growth Rate')
+
+### without this outcrossed line, there does appear to be a relationship
+
+### now look at the thermal optimum and the remaining variables
+
+ggplot(data = tpc_summary_data, aes(x = t_min, y = t_opt)) + 
+  geom_point() + geom_smooth(method = 'lm') + ggtitle('Critical Lower Temperature and Thermal Optimum')
+
+### no relationship with the lower critical temperature
+
+ggplot(data = tpc_summary_data, aes(x = t_max, y = t_opt)) + 
+  geom_point() + geom_smooth(method = 'lm') + ggtitle('Critical Upper Temperature and Thermal Optimum')
+
+### no relationship with the upper critical termperature
+
+ggplot(data = tpc_summary_data, aes(x = thermal_range, y = t_opt)) + 
+  geom_point() + geom_smooth(method = 'lm') + ggtitle('Thermal Breadth and Thermal Optimum')
+
+### no relationship with thermal range
+
+### look at relationships with t_min and the remaining variables
+
+ggplot(data = tpc_summary_data, aes(x = t_max, y = t_min)) + geom_point() +
+  geom_smooth(method = 'lm') + ggtitle('Upper Critical Temperature and Lower Critical Temperature')
+
+### doesn't really seem to be a relationship with t_max
+
+ggplot(data = tpc_summary_data, aes(x = thermal_range, y = t_min)) + geom_point() +
+  geom_smooth(method = 'lm') + ggtitle('Thermal Breadth and Lower Critical Temperature')
+
+### no relationship with thermal breadth
+
+### look at the final realtionship between t_max and the thermal range
+
+ggplot(data = tpc_summary_data, aes(x = thermal_range, y = t_max)) + geom_point() +
+  geom_smooth(method = 'lm') + ggtitle('Thermal Breadth and Upper Critical Temperature')
+
+### here we do see a relationship
+
+```
+
+So, across all of the TPC descriptors that we got from the GAMs, it seems like there are two potential relationships within the data. First, it looks like we might have some evidence for a bit of a thermal specialist-generalist tradeoff among the outcrossed lines. After removing our one genotype with lower growth rates than everyone else, we see that outcrossed lines with higher maximum growth rates tend to have lower thermal breadths. The other relationship that we see is one between thermal breadth and the upper critical temperature. I think this suggests that what is driving the differences among outcrossed lines in thermal breadth is how well they are able to maintain their growth rates at higher temperatures. We can this somewhat in a plot that has all of the outcrossed lines in one figure.
+
+```{r}
+
+ggplot(data = tpc_data, aes(x = Temperature, y = Growth.Rate.Hours, color = Line)) + 
+  geom_point() + geom_smooth(method = 'gam', formula = y ~ s(x, k = 6, bs = 'tp'), se = FALSE)
+
+
+```
+
+### Trying to Link Morphological Plasticity to Thermal Breadth
+
+Now that we have our alternative metric of thermal breadth, we can see if plasticity in morphology and movement is related to 
+
+
+
+
