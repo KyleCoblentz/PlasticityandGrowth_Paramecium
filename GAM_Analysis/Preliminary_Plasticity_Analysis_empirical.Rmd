@@ -423,6 +423,41 @@ fit_length_growth_noint <- lm(Growth.Rate.Hours ~ mean_length + Line, data = gro
 
 AIC(fit_length_growth, fit_length_growth_noint)
 
+ggplot(data = growth_phenotypes, aes(x = mean_length, y = Growth.Rate.Hours, group = Line)) + geom_point(aes(color = Temperature)) + 
+  scale_color_viridis_c() + geom_smooth(method = 'lm', se = FALSE)
+
+### calculate slope of length growth rate relationship for each outcrossed line
+
+length_growth_slope_data <- data.frame(Line = unique(growth_phenotypes$Line),
+                              Slope = c(coef(fit_length_growth)[2] + coef(fit_length_growth)['mean_length:LineG120'],
+                                       coef(fit_length_growth)[2] + coef(fit_length_growth)['mean_length:LineG33'],
+                                       coef(fit_length_growth)[2],
+                                       coef(fit_length_growth)[2] + coef(fit_length_growth)['mean_length:LineG110'],
+                                       coef(fit_length_growth)[2] + coef(fit_length_growth)['mean_length:LineG35'],
+                                       coef(fit_length_growth)[2] + coef(fit_length_growth)['mean_length:LineG41'],
+                                       coef(fit_length_growth)[2] + coef(fit_length_growth)['mean_length:LineG44'],
+                                       coef(fit_length_growth)[2] + coef(fit_length_growth)['mean_length:LineG69'],
+                                       coef(fit_length_growth)[2] + coef(fit_length_growth)['mean_length:LineG16'],
+                                       coef(fit_length_growth)[2] + coef(fit_length_growth)['mean_length:LineG38'],
+                                       coef(fit_length_growth)[2] + coef(fit_length_growth)['mean_length:LineG72'],
+                                       coef(fit_length_growth)[2] + coef(fit_length_growth)['mean_length:LineG19'],
+                                       coef(fit_length_growth)[2] + coef(fit_length_growth)['mean_length:LineG77'],
+                                       coef(fit_length_growth)[2] + coef(fit_length_growth)['mean_length:LineG104'],
+                                       coef(fit_length_growth)[2] + coef(fit_length_growth)['mean_length:LineG89'],
+                                       coef(fit_length_growth)[2] + coef(fit_length_growth)['mean_length:LineG20'],
+                                       coef(fit_length_growth)[2] + coef(fit_length_growth)['mean_length:LineG34'],
+                                       coef(fit_length_growth)[2] + coef(fit_length_growth)['mean_length:LineG30'],
+                                       coef(fit_length_growth)[2] + coef(fit_length_growth)['mean_length:LineG90'],
+                                       coef(fit_length_growth)[2] + coef(fit_length_growth)['mean_length:LineG36']))
+
+length_growth_slope_data <- left_join(length_growth_slope_data, summ_length, by = 'Line')
+
+
+ggplot(data = length_growth_slope_data, aes(x = log(range_length), y = abs(Slope))) + geom_point() + geom_smooth(method = 'lm')
+
+summary(lm(formula = abs(Slope) ~ range_length, data = length_growth_slope_data))
+
+
 ```
 
 In general, we see that there is a negative relationship between length and growth rates across temperatures in each of the genotypes. A statistical model with an interaction between length and and outcrossed line also outperforms a model with no interaction suggesting that there is significant variation among lines in the relationship between body size change and growth rate change. G19 is a bit weird ... 
@@ -503,20 +538,26 @@ Next, we want to ask whether the extent to which an outcrossed line is plastic i
 
 ### fit a gam to the growth data
 
-tpc_fit <- gam(formula = Growth.Rate.Hours ~ Line + s(Temperature, k = 5, bs = 'tp', by = Line), data = growth_data, method = 'REML')
+growth_data$Date.paramecium.introduced <- as.factor(growth_data$Date.paramecium.introduced)
+
+tpc_fit <- gam(formula = Growth.Rate.Hours ~ Line + s(Temperature, k = 5, bs = 'tp', by = Line) + s(Date.paramecium.introduced, bs = 're'), data = growth_data, method = 'REML')
 
 summary(tpc_fit)
 
-tpc_fit_noint <- gam(formula = Growth.Rate.Hours ~ Line + s(Temperature, k = 5, bs = 'tp'), data = growth_data, method = 'REML')
+tpc_fit_noint <- gam(formula = Growth.Rate.Hours ~ Line + s(Temperature, k = 5, bs = 'tp') + s(Date.paramecium.introduced, bs = 're'), data = growth_data, method = 'REML')
 
 AIC(tpc_fit, tpc_fit_noint)
 
+draw(tpc_fit)
+
 ```
-The GAMs here actually suggest that a model including Line but no interaction between temperature and Line actually performs best with the growth data. This suggests that there is potentially a genetic effect (moving the line up and down), an environmental effect (how the line changes with temperature), but no gene by environment interaction in the TPCs. That being said, we can still get the plasticity of the growth rate for each of the outcrossed lines.
+The GAMs here actually suggest that a model including Line but no interaction between temperature and Line actually performs best with the growth data. This suggests that there is potentially a genetic effect (moving the line up and down), an environmental effect (how the line changes with temperature), but no gene by environment interaction in the TPCs. That being said, we can still get the plasticity of the growth rate for each of the outcrossed lines. 
+
+This apparently changes after accounting for a random effect of day.
 
 ```{r}
 
-tpc_means <- growth_data %>% filter(Temperature <= 34) %>% group_by(Line, Temperature) %>% 
+tpc_means <- growth_data %>% group_by(Line, Temperature) %>% 
   summarise(growth = median(Growth.Rate.Hours)) %>% 
   ungroup() %>% group_by(Line) %>% 
   summarise(mean_growth = mean(growth),
@@ -535,7 +576,7 @@ plast_growth_data <- full_join(plast_morph_data, tpc_means, by = 'Line')
 
 ### length plasticity
 
-ggplot(data = plast_growth_data, aes(x = range_length, y = range_growth)) +
+ggplot(data = filter(plast_growth_data, Line != "G20"), aes(x = range_length, y = range_growth)) +
   geom_point() + geom_smooth(method = 'lm', se = TRUE)
 
 ### width plasticity

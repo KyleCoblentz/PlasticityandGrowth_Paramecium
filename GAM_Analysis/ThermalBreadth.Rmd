@@ -217,6 +217,10 @@ ggplot(data = tpc_summary_data, aes(x = thermal_range, y = max_growth)) +
 ggplot(data = filter(tpc_summary_data, Line != 'G20'), aes(x = thermal_range, y = max_growth)) + 
   geom_point() + geom_smooth(method = 'lm') + ggtitle('Thermal Breadth and Max Growth Rate')
 
+library(lmodel2)
+
+lmodel2(formula = max_growth ~ thermal_range, data = filter(tpc_summary_data, Line != 'G20'))
+
 ### without this outcrossed line, there does appear to be a relationship
 
 ### now look at the thermal optimum and the remaining variables
@@ -262,14 +266,139 @@ So, across all of the TPC descriptors that we got from the GAMs, it seems like t
 ```{r}
 
 ggplot(data = tpc_data, aes(x = Temperature, y = Growth.Rate.Hours, color = Line)) + 
-  geom_point() + geom_smooth(method = 'gam', formula = y ~ s(x, k = 6, bs = 'tp'), se = FALSE)
+  geom_point() + geom_smooth(method = 'gam', formula = y ~ s(x, k = 4, bs = 'tp'), se = FALSE)
+
+```
+Whereas there is some variability in the lower critical temperatures among outcrossed lines, there is much greater variability in the upper critical temperature among outcrossed lines. I think this pattern is intriguing and I'm curious about whether this is a general phenomenon for growth rate TPCs. It would be interesting to do a meta-analysis of rTPCs that have been done across different genotypes or genetic lines and ask whether we see this across different systems.
+
+### Trying to Link Morphological Plasticity to Thermal Breadth
+
+Now that we have our alternative metric of thermal breadth, we can see if plasticity in morphology and movement are related to thermal breadth. We will start by considering the same measures of plasticity that I used last time: the observed ranges of the parameters over the range of temperatures.
+
+First, we need to load the morphology and movement data and then calculate summaries for each of the variables of interest. Then we can join the morphological and TPC summaries into a single data frame.
+
+```{r}
+### load morphology and movement data
+
+morph_data <- read.csv('Plast_StartPop_Data.csv')
+
+### make some adjustments
+
+morph_data <- morph_data %>% mutate(Line = as.factor(sapply(strsplit(morph_data$file, split = "_"),'[[', 4)),
+                                                      Temperature = as.numeric(sapply(strsplit(morph_data$file, split = "_"),'[[', 3)),
+                                                      LineTemp = paste(Line, Temperature, sep = "_"))
+
+morph_data <- filter(morph_data, Temperature < 37)
+
+### calculate summaries for the data of interest.
+
+summ_area <- morph_data %>% group_by(Line, Temperature) %>% summarise(area = median(mean_area)) %>% ungroup() %>% group_by(Line) %>% 
+  summarise(mean_area = median(area),
+            max_area = max(area),
+            min_area = min(area),
+            range_area = max_area - min_area,
+            stand_range_area = range_area/max_area)
+
+### get data for length
+
+summ_length <- morph_data %>% group_by(Line, Temperature) %>% summarise(length = median(mean_major)) %>% ungroup() %>% group_by(Line) %>% 
+  summarise(mean_length = median(length),
+            max_length = max(length),
+            min_length = min(length),
+            range_length = max_length - min_length,
+            stand_range_length = range_length/max_length)
+
+### predictions for width
+
+summ_width <- morph_data %>% group_by(Line, Temperature) %>% summarise(width = median(mean_minor)) %>% ungroup() %>% group_by(Line) %>% 
+  summarise(mean_width = mean(width),
+            max_width = max(width),
+            min_width = min(width),
+            range_width = max_width - min_width,
+            stand_range_width = range_width/max_width)
+
+### predictions for aspect ratio
+
+summ_ar <- morph_data %>% group_by(Line, Temperature) %>% summarise(ar = median(mean_ar)) %>% ungroup() %>% group_by(Line) %>% 
+  summarise(mean_ar = mean(ar),
+            max_ar = max(ar),
+            min_ar = min(ar),
+            range_ar = max_ar - min_ar,
+            stand_range_ar = range_ar/max_ar)
+
+### predictions for speed
+
+summ_speed <- morph_data %>% group_by(Line, Temperature) %>% summarise(speed = median(gross_speed)) %>% ungroup() %>% group_by(Line) %>% 
+  summarise(mean_speed = mean(speed),
+            max_speed = max(speed),
+            min_speed = min(speed),
+            range_speed = max_speed - min_speed,
+            stand_range_speed = range_speed/max_speed)
+
+### put summaries together 
+
+morph_summ_data <- left_join(summ_area, summ_length, by = "Line")
+
+morph_summ_data <- left_join(morph_summ_data, summ_width, by = "Line")
+
+morph_summ_data <- left_join(morph_summ_data, summ_ar, by = "Line")
+
+morph_summ_data <- left_join(morph_summ_data, summ_speed, by = "Line")
+
+### put together morphological and tpc summaries
+
+tpc_morph_summ_data <- left_join(tpc_summary_data, morph_summ_data, by = 'Line')
+
+```
+
+Ok. Now we can go through and look at whether the thermal breadth is related to the amount that any of the phenotypes changed over the range of temperatures (the range variables). 
+
+```{r}
+
+### area 
+
+ggplot(data = tpc_morph_summ_data, aes(x = stand_range_area, y = thermal_range)) + geom_point() + 
+  geom_smooth(method = 'lm')
+
+### length
+
+ggplot(data = tpc_morph_summ_data, aes(x = range_length, y = thermal_range)) + geom_point() + 
+  geom_smooth(method = 'lm')
+
+### width
+
+ggplot(data = tpc_morph_summ_data, aes(x = stand_range_width, y = thermal_range)) + geom_point() + 
+  geom_smooth(method = 'lm')
+
+### aspect ratio
+
+ggplot(data = tpc_morph_summ_data, aes(x = stand_range_ar, y = thermal_range)) + geom_point() + 
+  geom_smooth(method = 'lm')
+
+### speed 
+
+ggplot(data = tpc_morph_summ_data, aes(x = stand_range_speed, y = thermal_range)) + geom_point() + 
+  geom_smooth(method = 'lm')
 
 
 ```
 
-### Trying to Link Morphological Plasticity to Thermal Breadth
+So, as we found last time, we don't really see any relationships between the total range of phenotypes as our measure of phenotypic plasticity and thermal breadth as our measure of growth rate plasticity. 
 
-Now that we have our alternative metric of thermal breadth, we can see if plasticity in morphology and movement is related to 
+### A different metric of morphological plasticity
+
+As we have talked about, however, using the range of the phenotype over the range of temperatures may not be the best metric for morphological plasticity. An alternative way to quantify the morphological plasticity that was brought up in lab meeting was to look at the extent to which the phenotype changed over the temperature range defined by the thermal range for each outcrossed line. This would focus on only the changes in phenotypes occurring around the maximum growth rate and when the growth rate was at least 50% of the maximum. 
+
+The question then becomes how to quantify this. There are a few problems. First, since the edges of the thermal ranges are from the GAM TPC fits, they are generally not likely to be temperatures at which we actually measured the morphological phenotypes. Second, how do we actually go about calculating how much the trait changed over the temperature range. 
+
+My idea here is to use predictions from GAMs once again. In particular, we can fit GAMs to each of the morphological variables. We can then get predictions from the GAMs. To calculate how much the trait changed, we can get the predictions at small (0.01 or 0.001 intervals) across the range of temperatures defining the thermal breadth. Across each of those small intervals, we can use the trait values to calculate the distance between those two points. Then, by summing across all of these distances, this will give us (approximately) the length of the line fitted by the GAM and a metric of how much the trait changed over the interval. Last, I do think we need to then divide by the length of the interval to standardize the measure since the total length of the line will be dependent on the range over which which it changes. Below, I've included a sketch of what this process would look like which I think helps to visualize the metric.
+
+
+
+
+
+
+
 
 
 
